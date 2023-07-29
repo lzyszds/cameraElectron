@@ -15,8 +15,6 @@ const maximize = () => {
 const close = () => {
   window.myElectron.handleWin('close')
 }
-
-
 </script>
 
 <template>

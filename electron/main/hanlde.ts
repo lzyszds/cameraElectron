@@ -11,12 +11,12 @@ export const handleWin = (win, app) => {
       //最小化窗口
       win?.minimize()
     } else if (arg == 'maximize') {
-      //最大化窗口
+      //最大化窗口 判断是否最大化 如果是就还原
       if (win?.isMaximized()) {
         return win?.unmaximize()
       }
       win?.maximize()
     }
-    return 'success'
+    return 'success' //返回给渲染器，返回的是一个promise
   })
 }
