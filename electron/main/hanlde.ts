@@ -1,4 +1,4 @@
-import { ipcMain } from "electron"
+import { ipcMain, nativeTheme } from "electron"
 
 export const handleWin = (win, app) => {
   //操作窗口（window）
@@ -16,6 +16,13 @@ export const handleWin = (win, app) => {
         return win?.unmaximize()
       }
       win?.maximize()
+    } else if (arg == 'changeTheme') {
+      //切换主题
+      if (nativeTheme.shouldUseDarkColors) {
+        nativeTheme.themeSource = "light";
+      } else {
+        nativeTheme.themeSource = "dark";
+      }
     }
     return 'success' //返回给渲染器，返回的是一个promise
   })

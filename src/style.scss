@@ -1,3 +1,4 @@
+@import url('./assets/css/animate.min.css');
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -69,10 +70,21 @@ code {
   padding: 2em;
 }
 
-img,a,button{
+img,
+a,
+button {
   -webkit-user-drag: none;
   user-select: none;
-} 
+}
+
+@font-face {
+  font-family: 'alimama';
+  src: url('./assets/fonts/AlimamaShuHeiTi-Bold.ttf');
+}
+@font-face {
+  font-family: 'dindin';
+  src: url('./assets/fonts/DingTalk_JinBuTi_Regular.ttf');
+}
 
 /* 这个例子使用了一个有黑色背景和白色文字的元素，当用户使用浅色主题时，会翻转黑白颜色。 */
 @media (prefers-color-scheme: light) {
@@ -93,3 +105,4 @@ img,a,button{
     background-color: #f9f9f9;
   }
 }
+
