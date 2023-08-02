@@ -37,7 +37,6 @@ const props = defineProps({
     default: "rgb(150, 174, 211)",
   },
 }) as Props;
-console.log(`lzy  props:`, props);
 const emits = defineEmits<Emit>();
 const handlePace = () => {
   emits("paceValue", { [props.emitKey]: pace.value });

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useStore } from "@/store/store";
 import Adjust from "@/components/actionbarCompontens/Adjust.vue";
+import Ratio from "@/components/actionbarCompontens/Ratio.vue";
 import Filters from "@/components/actionbarCompontens/Filters.vue";
 import Text from "@/components/actionbarCompontens/Text.vue";
 import Sticker from "@/components/actionbarCompontens/Sticker.vue";
@@ -11,9 +11,10 @@ import Beauty from "@/components/actionbarCompontens/Beauty.vue";
 import Frame from "@/components/actionbarCompontens/Frame.vue";
 import Mosaic from "@/components/actionbarCompontens/Mosaic.vue";
 import Graffiti from "@/components/actionbarCompontens/Graffiti.vue";
-const state = useStore();
+const props = defineProps<{ activeTool: string }>();
 const componentsItems = {
   adjust: Adjust,
+  ratio: Ratio,
   filters: Filters,
   text: Text,
   sticker: Sticker,
@@ -29,8 +30,22 @@ const componentsItems = {
 
 <template>
   <div class="actionBar">
-    <component :is="componentsItems[state.actionToolsValue]"></component>
+    <component :is="componentsItems[props.activeTool]"></component>
   </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss">
+.actionItemCard {
+  background: #fafafa;
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 5px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  padding: 16px;
+  color: #111;
+  margin-bottom: 8px;
+  user-select: none;
+
+  h3 {
+    margin: 0 0 10px 0;
+  }
+}
+</style>

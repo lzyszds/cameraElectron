@@ -41,7 +41,9 @@
     "@vueuse/core": "^10.3.0",
     "dayjs": "^1.11.9",
     "electron-win-state": "^1.1.22",
+    "element-plus": "^2.3.8",
     "lodash": "^4.17.21",
+    "lzyutils": "^1.0.0",
     "pinia": "^2.1.6",
     "sass": "^1.64.1"
   }

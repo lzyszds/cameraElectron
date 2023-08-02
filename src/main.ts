@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import "./style.scss"
+import 'element-plus/dist/index.css'
 import App from './App.vue'
 import LzyIcon from '@/components/lzyCompontens/LzyIcon.vue';
 import LzyProgress from '@/components/lzyCompontens/LzyProgress.vue';

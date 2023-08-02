@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { inject } from "vue";
+import { inject, ref } from "vue";
 import { Siderbar } from "@/typing/SideBarType";
-import { useStore } from "@/store/store";
 const siderbar = inject<Siderbar[]>("RenderView");
-const state = useStore();
+const activeTool = ref<string>("adjust");
+const emit = defineEmits(["changeTools"]);
 const changeTools = (val) => {
-  state.setActionToolsValue(val);
+  emit("changeTools", val);
+  activeTool.value = val;
 };
 </script>
 
@@ -15,6 +16,7 @@ const changeTools = (val) => {
       v-for="item in siderbar"
       :key="item.name"
       class="sidebarItem"
+      :class="{ active: activeTool === item.name }"
       @click="changeTools(item.name)"
     >
       <LzyIcon :name="item.icon"></LzyIcon>
@@ -27,19 +29,29 @@ const changeTools = (val) => {
 .sidebar {
   display: flex;
   flex-direction: column;
-  place-items: center;
-  place-content: center;
   margin-bottom: 200px;
+  gap: 15px;
+
   .sidebarItem {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     height: 60px;
+    width: 100%;
     cursor: pointer;
+    &.active {
+      svg {
+        color: #fff;
+        background-color: var(--themeColor);
+        border-radius: 50%;
+      }
+    }
     svg {
       width: 25px;
       height: 25px;
+      margin-bottom: 5px;
+      padding: 4px;
     }
     span {
       font-size: 13px;

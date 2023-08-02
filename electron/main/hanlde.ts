@@ -32,16 +32,20 @@ export const handleWin = (win, app) => {
 //操作摄像头设备
 export const onDeviceVideo = (win, app) => {
   ipcMain.handle('onDeviceVideo', (event, arg) => {
-    const path = dialog.showOpenDialogSync({ properties: ['openDirectory'] })
+    let filePath: string = ''
+    try {
+      filePath = dialog.showOpenDialogSync({ properties: ['openDirectory'] })[0]
+    } catch (e) {
+      return 'Error'
+    }
     /*在这里可以进行对 Blob 数据的处理，如保存为文件等
-    例如，将 Blob 数据保存为视频文件 当前项目全程使用.webm视频格式 */
-    let filePath = ''
+        例如，将 Blob 数据保存为视频文件 当前项目全程使用.webm视频格式 */
     /* 视频名字进行处理 避免重复 因为是独立使用的
     不可能出现同一时间录制多个视频，所以只需要使用时间戳就行了 */
     const timestamp = new Date().getTime();
     const randomStr = Math.random().toString(36).substr(2, 5);
     const fileName = `/video_${timestamp}_${randomStr}.webm`;
-    filePath = path + fileName;
+    filePath += fileName;
     // 写入文件
     fs.writeFileSync(filePath, Buffer.from(arg));
     return filePath//返回给渲染器，返回的是一个promise

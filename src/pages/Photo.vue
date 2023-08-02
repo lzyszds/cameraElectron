@@ -1,12 +1,26 @@
 <script setup lang="ts">
-// import ActionBar from "@/components/ActionBar.vue";
+import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue";
 import type { Ref } from "vue";
 import { useEventListener } from "@vueuse/core";
 import { Siderbar } from "@/typing/SideBarType";
 import { popup } from "@/components/lzyCompontens/popup";
-const siderbar: Siderbar[] = [];
+import { ElNotification, ElButton } from "element-plus";
+import { useStore } from "@/store/store";
+const state = useStore();
+const siderbar: Siderbar[] = [
+  {
+    title: "调整",
+    name: "adjust",
+    icon: "teenyicons:adjust-horizontal-alt-outline",
+  },
+  {
+    title: "比例",
+    name: "ratio",
+    icon: "solar:crop-broken",
+  },
+];
 provide("RenderView", siderbar);
 interface MediaparasType {
   // 媒体流对象
@@ -26,32 +40,6 @@ const videoElement: Ref<HTMLVideoElement | null> = ref(null);
 //canvas元素引用
 const canvasElement: Ref<HTMLCanvasElement | null> = ref(null);
 
-//滤镜参数值
-const fillterAgg = reactive({
-  contrast: 0 as number,
-  brightness: 0 as number,
-});
-const fillCompontens = {
-  contrast: {
-    name: "对比度",
-    min: -50,
-    max: 50,
-  },
-  brightness: {
-    name: "亮度",
-    min: -50,
-    max: 50,
-  },
-};
-
-//获取滤镜组件返回的值
-const paceValue = (val: { (key: string): number }) => {
-  const key = Object.keys(val)[0];
-  const value = Object.values(val)[0];
-  fillterAgg[key] = Number(value);
-  console.log(`lzy  fillterAgg:`, fillterAgg);
-};
-
 // 初始化摄像头
 const initCamera = async () => {
   try {
@@ -67,26 +55,27 @@ const initCamera = async () => {
 };
 
 // 设置期望的宽高比，比如 16:9，4:3 等
-const desiredAspectRatio = 3 / 4;
+const desiredAspectRatio = 16 / 9;
 // 根据实际宽高比和期望宽高比来计算画布的宽高
 const canvasWidth = ref(640); // 可以根据实际情况设置画布的宽度
-const canvasHeight = computed(() => canvasWidth.value * desiredAspectRatio);
+const canvasHeight = computed(() => canvasWidth.value / desiredAspectRatio);
 
 //将视频渲染进canvas
 const renderToCanvas = () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
-  const { width, height } = canvasElement.value!;
+  // 计算视频在 Canvas 中的适配宽高
+  const { x, y, newWidth, newHeight } = resizeRatio();
   // 将视频渲染到 canvas 上
-  context.drawImage(video, 0, 0, width, height);
+  context.drawImage(video, x, y, newWidth, newHeight);
 
   // 获取 canvas 图像数据
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
-
-  // 调整亮度、对比度和颜色通道
-  let { contrast, brightness } = fillterAgg;
+  
+  // 调整亮度、对比度和颜色通道 
+  let { contrast, brightness } = state.fillterAgg;
   contrast += 100;
   // brightness += 100;
   // const brightness = 50; // 亮度调整值，可根据需求调整
@@ -122,20 +111,46 @@ const renderToCanvas = () => {
   requestAnimationFrame(renderToCanvas);
 };
 
+function resizeRatio() {
+  const originalWidth = videoElement.value!.videoWidth;
+  const originalHeight = videoElement.value!.videoHeight;
+
+  // 计算视频在 Canvas 中的适配宽高
+  const aspectRatio = originalWidth / originalHeight;
+  let newWidth = canvasElement.value!.width;
+  let newHeight = canvasElement.value!.height;
+
+  if (aspectRatio > 1) {
+    // 宽度较大，根据 Canvas 宽度计算适配高度
+    newHeight = canvasElement.value!.width / aspectRatio;
+  } else {
+    // 高度较大，根据 Canvas 高度计算适配宽度
+    newWidth = canvasElement.value!.height * aspectRatio;
+  }
+
+  // 计算视频在 Canvas 中的居中位置
+  const x = (canvasElement.value!.width - newWidth) / 2;
+  const y = (canvasElement.value!.height - newHeight) / 2;
+  return { x, y, newWidth, newHeight };
+}
+
+const hasStartFlag = ref<boolean>(false);
 // 开始录制
 const startRecording = () => {
   if (mediaParas.mediaStream) {
     mediaParas.mediaRecorder = new MediaRecorder(mediaParas.mediaStream);
     mediaParas.mediaRecorder.ondataavailable = handleDataAvailable;
     mediaParas.mediaRecorder.start();
+    hasStartFlag.value = true;
     console.log("开始录制");
   }
 };
 
 // 停止录制
 const stopRecording = () => {
-  if (mediaParas.mediaRecorder) {
+  if (mediaParas.mediaRecorder && hasStartFlag.value === true) {
     mediaParas.mediaRecorder.stop();
+    hasStartFlag.value = false;
     console.log("停止录制");
   }
 };
@@ -143,7 +158,6 @@ const stopRecording = () => {
 // 处理录制的数据块
 const handleDataAvailable = (event: BlobEvent) => {
   if (event.data.size > 0) {
-    console.log("录制数据：", event.data);
     mediaParas.chunks.push(event.data);
     //弹出窗口，让用户确认存储地址
     popup({
@@ -167,23 +181,35 @@ function sendBlobToMainProcess() {
       const arrayBuffer = reader.result;
       // 发送 Blob 数据给主进程
       window.myElectron.onDeviceVideo(arrayBuffer).then((res) => {
-        console.log(res);
+        if (res === "Error") return;
+        ElNotification({
+          title: "保存成功",
+          message: "文件保存的地址为：" + res,
+          type: "success",
+        });
       });
     };
     //先转成ArrayBuffer 读取完成后再转成ArrayBuffer 先走完这个再走onload
     reader.readAsArrayBuffer(blobData);
   }
 }
+const activeTool = ref<string>("adjust");
+const changeTools = (val: string) => {
+  activeTool.value = val;
+};
 
 nextTick(() => {
   initCamera();
   //视频宽度默认为父元素宽度
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth || 640;
+  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
 });
 
 // canvasWidth随着页面宽度变化而变化
 useEventListener("resize", () => {
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth || 640;
+  // 最大最小值
+  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
+  if (canvasWidth.value > 1180) canvasWidth.value = 1180;
+  if (canvasWidth.value < 640) canvasWidth.value = 640;
 });
 
 onBeforeUnmount(() => {
@@ -197,23 +223,9 @@ onBeforeUnmount(() => {
 <template>
   <div class="revimg">
     <!-- 侧边栏 -->
-    <Sidebar></Sidebar>
+    <Sidebar @changeTools="changeTools"></Sidebar>
     <!-- 操作栏 -->
-    <div class="actionBar">
-      <div class="actionItemCard">
-        <h3>调色</h3>
-        <LzyProgress
-          @paceValue="paceValue"
-          :value="fillterAgg.contrast"
-          v-for="(item, index) in fillCompontens"
-          :key="index"
-          :emitKey="index"
-          :min="item.min"
-          :max="item.max"
-          :name="item.name"
-        ></LzyProgress>
-      </div>
-    </div>
+    <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
     <div class="viewContent">
       <canvas ref="canvasElement" :width="canvasWidth" :height="canvasHeight"></canvas>
@@ -221,10 +233,12 @@ onBeforeUnmount(() => {
       <video ref="videoElement" style="display: none" autoplay></video>
 
       <div class="outcontent">
-        <!-- 开始录制按钮 -->
-        <button @click="startRecording">开始录制</button>
-        <!-- 停止录制按钮 -->
-        <button @click="stopRecording">停止录制</button>
+        <el-button @click="startRecording" color="#626aef" :disabled="hasStartFlag">
+          开始录制
+        </el-button>
+        <el-button @click="stopRecording" color="#626aef" :disabled="!hasStartFlag">
+          停止录制
+        </el-button>
       </div>
     </div>
   </div>
@@ -232,26 +246,15 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .revimg {
+  -webkit-user-drag: none;
   display: grid;
-  grid-template-columns: 60px 0.3fr 1fr;
+  grid-template-columns: 70px 255px 1fr;
   grid-template-rows: 1fr;
-}
-.actionBar {
-  .actionItemCard {
-    background: #fafafa;
-    box-shadow: 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 5px rgba(0, 0, 0, 0.15);
-    border-radius: 8px;
-    padding: 16px;
-    color: #111;
-    margin-bottom: 8px;
-    h3 {
-      margin: 0 0 10px 0;
-    }
-  }
+  padding-top: 40px;
 }
 .viewContent {
   padding: 0 20px;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 80px);
   overflow: hidden;
 
   video {

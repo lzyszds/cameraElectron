@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 export const useStore = defineStore('main', {
   state: () => ({
     actionToolsValue: '', //左侧工具栏选中的值
+    fillterAgg: {} as any, //过滤器聚合
   }),
   /**
      * 类似组件的 computed, 用来封装计算属性, 具有缓存特性
