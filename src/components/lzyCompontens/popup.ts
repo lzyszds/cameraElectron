@@ -24,6 +24,7 @@ const handleClick = (type: string, confirm?) => () => {
     console.log('success');
     confirm()
   }
+  render(null, document.body);
 }
 // 关闭弹窗
 const closePopup = (event) => {
@@ -34,7 +35,7 @@ const closePopup = (event) => {
 }
 
 export const popup = (options: PopupOptions): void => {
-  const { svgImg, title='温馨提示', info, confirm, cancel = '取消', success = '确定' } = options;
+  const { svgImg, title = '温馨提示', info, confirm, cancel = '取消', success = '确定' } = options;
 
   const html: PopupVNode = h('div', { class: 'popupShade', onClick: closePopup },
     h('div', { class: 'popupCard  animate__animated animate__zoomInDown', }, [

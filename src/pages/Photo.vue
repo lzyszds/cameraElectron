@@ -5,6 +5,7 @@ import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue
 import type { Ref } from "vue";
 import { useEventListener } from "@vueuse/core";
 import { Siderbar } from "@/typing/SideBarType";
+import { popup } from "@/components/lzyCompontens/popup";
 const siderbar: Siderbar[] = [];
 provide("RenderView", siderbar);
 interface MediaparasType {
@@ -144,7 +145,15 @@ const handleDataAvailable = (event: BlobEvent) => {
   if (event.data.size > 0) {
     console.log("录制数据：", event.data);
     mediaParas.chunks.push(event.data);
-    sendBlobToMainProcess();
+    //弹出窗口，让用户确认存储地址
+    popup({
+      svgImg: "images/dvg.png",
+      title: "温馨提示",
+      info: "是否保存视频",
+      confirm: () => {
+        sendBlobToMainProcess();
+      },
+    });
   }
 };
 
