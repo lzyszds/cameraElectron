@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { popup } from "./lzyCompontens/popup";
-const changeValue = ref<string>("revImg");
+const changeValue = ref<string>("photo");
 const contentChangeValue = [
   { name: "photo", title: "拍摄" },
   { name: "record", title: "录屏" },

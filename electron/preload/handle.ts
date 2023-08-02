@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld(
   'myElectron',
   {
     handleWin: (val) => ipcRenderer.invoke('onHandleWin', val),
+    onDeviceVideo: (val) => ipcRenderer.invoke('onDeviceVideo', val),
   }
 )
 

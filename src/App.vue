@@ -4,7 +4,7 @@ import Photo from "@/pages/Photo.vue";
 import Record from "@/pages/Record.vue";
 import RevImg from "@/pages/RevImg.vue";
 import { ref } from "vue";
-const changeValue = ref<string>("revImg");
+const changeValue = ref<string>("photo");
 const changeitem = (item: string) => {
   changeValue.value = item;
 };
@@ -16,9 +16,9 @@ const components = {
 </script>
 
 <template>
-  <NavTop @changeValue="changeitem"></NavTop>
+  <Suspense><NavTop @changeValue="changeitem"></NavTop></Suspense>
   <!-- <Popup></Popup> -->
-  <component :is="components[changeValue!]"> </component>
+  <Suspense><component :is="components[changeValue!]"></component></Suspense>
 </template>
 
 <style>
@@ -34,5 +34,4 @@ const components = {
 nav.navbar {
   grid-row: 1/2;
 }
-
 </style>
