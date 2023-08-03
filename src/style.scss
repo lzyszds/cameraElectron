@@ -1,9 +1,12 @@
-@import url('./assets/css/animate.min.css');
+@import url('./assets/css/tailwind.css');
+@import url("./assets/css/animate.min.css");
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   --themeColor: #646cff;
+  --color: rgba(255, 255, 255, 0.87); 
+  --reverColor: #000000;
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
@@ -78,18 +81,20 @@ button {
 }
 
 @font-face {
-  font-family: 'alimama';
-  src: url('./assets/fonts/AlimamaShuHeiTi-Bold.ttf');
+  font-family: "alimama";
+  src: url("./assets/fonts/AlimamaShuHeiTi-Bold.ttf");
 }
 @font-face {
-  font-family: 'dindin';
-  src: url('./assets/fonts/DingTalk_JinBuTi_Regular.ttf');
+  font-family: "dindin";
+  src: url("./assets/fonts/DingTalk_JinBuTi_Regular.ttf");
 }
 
 /* 这个例子使用了一个有黑色背景和白色文字的元素，当用户使用浅色主题时，会翻转黑白颜色。 */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
+    --color: #213547;
+    --reverColor: #ffffff;
     background-color: #ffffff;
   }
 

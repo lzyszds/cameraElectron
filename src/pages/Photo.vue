@@ -8,6 +8,7 @@ import { Siderbar } from "@/typing/SideBarType";
 import { popup } from "@/components/lzyCompontens/popup";
 import { ElNotification, ElButton } from "element-plus";
 import { useStore } from "@/store/store";
+import { formatDuraton } from "lzyutils";
 const state = useStore();
 const siderbar: Siderbar[] = [
   {
@@ -29,11 +30,14 @@ interface MediaparasType {
   mediaRecorder: MediaRecorder | null;
   // 录制的数据块
   chunks: BlobPart[];
+  //录制时间
+  time: number;
 }
 const mediaParas = reactive<MediaparasType>({
   mediaStream: null,
   mediaRecorder: null,
   chunks: [],
+  time: 0,
 });
 // 视频元素引用
 const videoElement: Ref<HTMLVideoElement | null> = ref(null);
@@ -73,8 +77,8 @@ const renderToCanvas = () => {
   // 获取 canvas 图像数据
   const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
   const data = imageData.data;
-  
-  // 调整亮度、对比度和颜色通道 
+
+  // 调整亮度、对比度和颜色通道
   let { contrast, brightness } = state.fillterAgg;
   contrast += 100;
   // brightness += 100;
@@ -136,13 +140,22 @@ function resizeRatio() {
 
 const hasStartFlag = ref<boolean>(false);
 // 开始录制
+let interTimefn: any = null;
 const startRecording = () => {
-  if (mediaParas.mediaStream) {
+  if (!mediaParas.mediaStream) return;
+  if (!hasStartFlag.value) {
     mediaParas.mediaRecorder = new MediaRecorder(mediaParas.mediaStream);
     mediaParas.mediaRecorder.ondataavailable = handleDataAvailable;
     mediaParas.mediaRecorder.start();
     hasStartFlag.value = true;
     console.log("开始录制");
+    interTimefn = setInterval(() => {
+      mediaParas.time++;
+    }, 1000);
+  } else {
+    clearInterval(interTimefn);
+    mediaParas.time = 0;
+    stopRecording();
   }
 };
 
@@ -184,7 +197,8 @@ function sendBlobToMainProcess() {
         if (res === "Error") return;
         ElNotification({
           title: "保存成功",
-          message: "文件保存的地址为：" + res,
+          dangerouslyUseHTMLString: true,
+          message: res,
           type: "success",
         });
       });
@@ -194,6 +208,7 @@ function sendBlobToMainProcess() {
   }
 }
 const activeTool = ref<string>("adjust");
+//切换工具
 const changeTools = (val: string) => {
   activeTool.value = val;
 };
@@ -201,13 +216,13 @@ const changeTools = (val: string) => {
 nextTick(() => {
   initCamera();
   //视频宽度默认为父元素宽度
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
+  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 40 || 640;
 });
 
 // canvasWidth随着页面宽度变化而变化
 useEventListener("resize", () => {
   // 最大最小值
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
+  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 40 || 640;
   if (canvasWidth.value > 1180) canvasWidth.value = 1180;
   if (canvasWidth.value < 640) canvasWidth.value = 640;
 });
@@ -221,46 +236,68 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="revimg">
+  <div
+    class="revimg pt-10 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden"
+  >
     <!-- 侧边栏 -->
     <Sidebar @changeTools="changeTools"></Sidebar>
     <!-- 操作栏 -->
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
-    <div class="viewContent">
-      <canvas ref="canvasElement" :width="canvasWidth" :height="canvasHeight"></canvas>
+    <div class="viewContent pt-0 px-1">
+      <canvas
+        class="border-double border-2"
+        ref="canvasElement"
+        :width="canvasWidth"
+        :height="canvasHeight"
+        :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
+      ></canvas>
       <!-- <video ref="video" autoplay></video> -->
-      <video ref="videoElement" style="display: none" autoplay></video>
+      <video
+        class="w-full h-[45%] object-contain"
+        ref="videoElement"
+        style="display: none"
+        autoplay
+      ></video>
 
-      <div class="outcontent">
-        <el-button @click="startRecording" color="#626aef" :disabled="hasStartFlag">
-          开始录制
+      <div class="outcontent flex justify-between gap-5 pr-8 mt-5">
+        <el-button class="px-0" @click="startRecording" color="#626aef">
+          <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
+            <LzyIcon name="mdi:stopwatch-start-outline"></LzyIcon>开始录制
+          </span>
+          <span class="flex place-content-center place-items-center" v-else>
+            <LzyIcon name="ph:stop-circle"></LzyIcon>结束录制
+          </span>
         </el-button>
-        <el-button @click="stopRecording" color="#626aef" :disabled="!hasStartFlag">
+        <div class="time w-44 text-center rounded h-8 leading-8 select-none">
+          录制时长：{{ formatDuraton(mediaParas.time) }}
+        </div>
+        <!-- <el-button color="#626aef" :disabled="!hasStartFlag">
+          <LzyIcon name="ph:stop-circle"></LzyIcon>
           停止录制
-        </el-button>
+        </el-button> -->
       </div>
     </div>
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .revimg {
   -webkit-user-drag: none;
-  display: grid;
-  grid-template-columns: 70px 255px 1fr;
-  grid-template-rows: 1fr;
-  padding-top: 40px;
 }
 .viewContent {
-  padding: 0 20px;
   height: calc(100vh - 80px);
-  overflow: hidden;
 
   video {
     width: 100%;
     height: 45%;
     object-fit: contain;
+  }
+}
+.outcontent {
+  .time {
+    background-color: var(--themeColor);
+    color: var(--reverColor);
   }
 }
 </style>

@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { popup } from "./lzyCompontens/popup";
 const changeValue = ref<string>("photo");
+const hasMaximize = ref<boolean>(false);
 const contentChangeValue = [
   { name: "photo", title: "拍摄" },
   { name: "record", title: "录屏" },
@@ -29,6 +30,7 @@ const minimize = async () => {
 };
 //最大化窗口
 const maximize = () => {
+  hasMaximize.value = !hasMaximize.value;
   window.myElectron.handleWin("maximize");
   // ipcRenderer.send('handleWin', 'maximize')
 };
@@ -72,7 +74,7 @@ const close = () => {
         <LzyIcon name="mdi:horizontal-line"></LzyIcon>
       </button>
       <button class="toolsbtn simple" @click="maximize">
-        <LzyIcon name="ph:copy-simple-bold"></LzyIcon>
+        <LzyIcon :name="hasMaximize ? 'ph:copy-simple-bold' : 'ph:rectangle-bold'"></LzyIcon>
       </button>
       <button class="toolsbtn" @click="close">
         <LzyIcon name="iconamoon:close-bold"></LzyIcon>
@@ -155,6 +157,9 @@ const close = () => {
       border-radius: 0;
       transition: background 0.2s;
 
+      svg {
+        color: var(--color);
+      }
       &.simple svg {
         width: 15px;
         height: 15px;

@@ -47,6 +47,8 @@ async function createWindow() {
   win = new BrowserWindow({
     width: 1800,
     height: 1000,
+    minWidth: 1050,
+    minHeight: 800,
     title: 'Main window',
     autoHideMenuBar: true,//隐藏菜单栏
     show: true, // 先不显示
