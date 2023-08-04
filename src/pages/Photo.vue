@@ -85,55 +85,117 @@ const renderToCanvas = () => {
     redMultiplier,
     greenMultiplier,
     blueMultiplier,
-    highlight,
-    shadows,
+    saturation,
+    hue,
   } = state.fillterAgg;
-  contrast += 100;
-  // brightness += 100;
-  // const redMultiplier = 1.2; // 红色通道调整值，可根据需求调整
-  // const greenMultiplier = 0.8; // 绿色通道调整值，可根据需求调整
-  // const blueMultiplier = 1; // 蓝色通道调整值，可根据需求调整
-
+  // contrast += 100;
+  contrast = contrast / 100;
+  brightness = brightness / 100;
+  redMultiplier = redMultiplier / 100;
+  greenMultiplier = greenMultiplier / 100;
+  blueMultiplier = blueMultiplier / 100;
+  saturation = saturation / 100;
+  hue = hue / 100;
   for (let i = 0; i < data.length; i += 4) {
-    // // 调整亮度
-    data[i] += brightness;
-    data[i + 1] += brightness;
-    data[i + 2] += brightness;
-
-    // 调整颜色通道
-    data[i] *= (redMultiplier + 100) / 100;
-    data[i + 1] *= (greenMultiplier + 100) / 100;
-    data[i + 2] *= (blueMultiplier + 100) / 100;
-
-    // 调整对比度
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-    data[i] = ((r - 128) * contrast) / 100 + 128;
-    data[i + 1] = ((g - 128) * contrast) / 100 + 128;
-    data[i + 2] = ((b - 128) * contrast) / 100 + 128;
-
-    // 增加高光部分的亮度
-    if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) {
-      data[i] += highlight;
-      data[i + 1] += highlight;
-      data[i + 2] += highlight;
-    }
-
-    var newR = 0.393 * r + 0.769 * g + 0.189 * b;
-    var newG = 0.349 * r + 0.686 * g + 0.168 * b;
-    var newB = 0.272 * r + 0.534 * g + 0.131 * b;
-
-    var rgbArr = [newR, newG, newB];
-    [data[i], data[i + 1], data[i + 2]] = rgbArr;
+    //背景透明
+    // let r = data[i];
+    // let g = data[i + 1];
+    // let b = data[i + 2];
+    // if (g > 100 && r > 100 && b < 43) data[i + 3] = 0;
+    change_per_pix({ hue, saturation, brightness, contrast }, data, i);
   }
-
+  if (contrast && contrast != 0) {
+    let avg = getGrayAverage(data);
+    makeContrast(data, avg, contrast * 255);
+  }
   // 将处理后的图像绘制回 canvas 上
   context.putImageData(imageData, 0, 0);
   // 继续渲染下一帧
   requestAnimationFrame(renderToCanvas);
 };
+// 计算某个 帧的 灰度平均值
+function getGrayAverage(imagePixArray) {
+  var average = function (dataArray) {
+    let pixCount = dataArray.length / 4;
+    let sum = 0;
+    for (let i = 0; i < pixCount; i++) {
+      const pixOffset = i * 4;
+      let r = dataArray[pixOffset];
+      let g = dataArray[pixOffset + 1];
+      let b = dataArray[pixOffset + 2];
+      sum = sum + (0.299 * r + 0.587 * b + 0.114 * g);
+    }
+    let aver = sum / dataArray.length;
+    return aver;
+  };
+  return average(imagePixArray);
+}
 
+// 对每个像素点 调节 数值
+function change_per_pix(param, dataArray, offset) {
+  // 从 rgb 转成成 hls
+  let r = dataArray[offset];
+  let g = dataArray[offset + 1];
+  let b = dataArray[offset + 2];
+  let from = [r, g, b];
+  let hsl = window.colorconv.RGB2HSL(from);
+
+  //处理 色度
+  if (param.hue && param.hue != 0) {
+    // delta 的区间 [-360,360]
+    const delta = param.hue * 360;
+    let hue = hsl[0] + delta;
+    if (hue < 0) hue = 0;
+    if (hue > 360) hue = 360;
+    //postMsg(str);
+    hsl[0] = hue;
+  }
+  // 处理 饱和度
+  if (param.saturation && param.saturation != 0) {
+    // delta 的区间 [-100,100]
+    const delta = parseFloat(param.saturation) * 100;
+    let saturation = hsl[1] + delta;
+    if (saturation < 0) saturation = 0;
+    if (saturation > 100) saturation = 100;
+    hsl[1] = saturation;
+  }
+  // 处理 亮度
+  if (param.brightness && param.brightness != 0) {
+    // delta 的区间 [-100,100]
+    const delta = parseFloat(param.brightness) * 100;
+    let brightness = hsl[2] + delta;
+    if (brightness < 0) brightness = 0;
+    if (brightness > 100) brightness = 100;
+    hsl[2] = brightness;
+  }
+
+  // 从 hls 转回去 rgb
+  let newColor = window.colorconv.HSL2RGB(hsl);
+  dataArray[offset] = newColor[0];
+  dataArray[offset + 1] = newColor[1];
+  dataArray[offset + 2] = newColor[2];
+}
+function makeContrast(dataArray, average, contrast) {
+  let pixCount = dataArray.length / 4;
+  for (let i = 0; i < pixCount; i++) {
+    const pixOffset = i * 4;
+    let r = dataArray[pixOffset];
+    let g = dataArray[pixOffset + 1];
+    let b = dataArray[pixOffset + 2];
+    let newR = r + ((r - average) * contrast) / 255;
+    let newG = g + ((g - average) * contrast) / 255;
+    let newB = b + ((b - average) * contrast) / 255;
+    if (newR < 0) newR = 0;
+    if (newR > 255) newR = 255;
+    if (newG < 0) newG = 0;
+    if (newG > 255) newG = 255;
+    if (newB < 0) newB = 0;
+    if (newB > 255) newR = 255;
+    dataArray[pixOffset] = newR;
+    dataArray[pixOffset + 1] = newG;
+    dataArray[pixOffset + 2] = newB;
+  }
+}
 function resizeRatio() {
   const originalWidth = videoElement.value!.videoWidth;
   const originalHeight = videoElement.value!.videoHeight;

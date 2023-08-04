@@ -4,7 +4,7 @@ import Photo from "@/pages/Photo.vue";
 import Record from "@/pages/Record.vue";
 import RevImg from "@/pages/RevImg.vue";
 import { ref } from "vue";
-const changeValue = ref<string>("record");
+const changeValue = ref<string>("photo");
 const changeitem = (item: string) => {
   changeValue.value = item;
 };

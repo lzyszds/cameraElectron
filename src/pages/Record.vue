@@ -34,10 +34,11 @@ onMounted(() => {
           width: videoElement.value!.videoWidth,
           height: videoElement.value!.videoHeight,
         });
-        console.log(`lzy  detections:`, detections);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // draw.drawFaceLandmarks(canvas, resizedDetections);
-        draw.drawFaceExpressions(canvas, resizedDetections);
+        //人脸识别
+        draw.drawFaceLandmarks(canvas, resizedDetections);
+        //表情识别
+        // draw.drawFaceExpressions(canvas, resizedDetections);
       }, 300);
     } catch (error) {
       console.error("模型加载失败：", error);

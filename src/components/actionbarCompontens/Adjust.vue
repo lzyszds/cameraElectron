@@ -8,9 +8,8 @@ state.fillterAgg = {
   redMultiplier: 0 as number,
   greenMultiplier: 0 as number,
   blueMultiplier: 0 as number,
-  highlight: 0 as number,
-  shadows : 0 as number,
-
+  saturation: 0 as number,
+  hue: 0 as number,
 };
 const fillCompontens = {
   contrast: {
@@ -38,16 +37,17 @@ const fillCompontens = {
     min: -50,
     max: 50,
   },
-  highlight: {
+  saturation: {
     name: "高光",
     min: -50,
     max: 50,
   },
-  shadows: {
-    name: "阴影",
-    min: -50,
-    max: 50,
+  hue: {
+    name: "色调",
+    min: -30,
+    max: 30,
   },
+
 };
 
 //获取滤镜组件返回的值
