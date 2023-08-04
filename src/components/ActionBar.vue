@@ -39,7 +39,7 @@ const componentsItems = {
   background: #fafafa;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 5px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
-  padding: 16px;
+  padding: 8px;
   color: #111;
   margin-bottom: 8px;
   user-select: none;

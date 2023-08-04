@@ -5,7 +5,6 @@ import standard from "@/assets/images/format-4-3.png";
 import standardV from "@/assets/images/format-4-3V.png";
 import video from "@/assets/images/format-16-9.png";
 import videoV from "@/assets/images/format-16-9V.png";
-
 const ratioVal = ref<string>("1:1");
 const ratioArr = [
   { name: "1:1", icon: square, width: 1, height: 1, title: "正方形" },
@@ -22,17 +21,33 @@ const ratioArr = [
 const ratioChange = (val: string) => {
   ratioVal.value = val;
 };
+const actionItemCardCss = window.tailwindJs.hoverTailwincss([
+  "bg-[var(--themeColor)]",
+  "text-white",
+  "rounded-[5px]",
+]);
 </script>
 
 <template>
-  <div class="actionItemCard" v-for="(item, index) in ratioArr" :key="index">
+  <div
+    class="actionItemCard cursor-pointer"
+    :class="actionItemCardCss"
+    v-for="(item, index) in ratioArr"
+    :key="index"
+  >
     <div
-      class="ratioItem"
+      class="ratioItem hover:text-white grid grid-cols-[80px_1fr]"
       :class="{ active: ratioVal === item.name }"
       @click="ratioChange(item.name)"
     >
-      <div class="ratioItemImg">
-        <img width="20" height="20" :src="item.icon" :alt="item.title" />
+      <div class="flex gap-2">
+        <img
+          class="align-bottom"
+          width="20"
+          height="20"
+          :src="item.icon"
+          :alt="item.title"
+        />
         {{ item.width }}:{{ item.height }}
       </div>
       <span>{{ item.title }}</span>
@@ -40,23 +55,3 @@ const ratioChange = (val: string) => {
   </div>
 </template>
 
-<style lang="scss" scoped>
-.actionItemCard {
-  &:hover {
-    background-color: var(--themeColor);
-    color: #fff;
-    border-radius: 5px;
-    cursor: pointer;
-    img {
-      filter: invert(1);
-    }
-  }
-  .ratioItem {
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    img {
-      vertical-align: bottom;
-    }
-  }
-}
-</style>

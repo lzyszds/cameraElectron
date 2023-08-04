@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { popup } from "./lzyCompontens/popup";
-const changeValue = ref<string>("photo");
+const changeValue = ref<string>("record");
 const hasMaximize = ref<boolean>(false);
 const contentChangeValue = [
   { name: "photo", title: "拍摄" },

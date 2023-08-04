@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 interface Emit {
   (key: string, value: { [key: string]: number }): void;
 }
@@ -43,6 +43,12 @@ const handlePace = () => {
 };
 //-100 0 100正常值
 const pace = ref<number>(props.value!);
+watch(
+  () => props.value,
+  (val) => {
+    pace.value = val!;
+  }
+);
 const style = computed(() => {
   return {
     "--progressBackground": props.background,
@@ -79,18 +85,20 @@ const style = computed(() => {
   }
   span {
     position: absolute;
-    left: 10px;
-    bottom: 0;
+    left: 5px;
+    bottom: 5px;
     z-index: 1;
-    color: #eee;
+    color: #ffffff;
     font-size: 12px;
+    font-family: "dindin";
+    font-weight: 600;
     /* 透过元素 */
     pointer-events: none;
   }
   .lzy_level {
     appearance: none;
-    width: 150px;
-    height: 20px;
+    width: 200px;
+    height: 30px;
     background: var(--progressBackground);
     overflow: hidden;
     border-radius: 5px;

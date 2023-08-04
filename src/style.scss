@@ -1,11 +1,11 @@
-@import url('./assets/css/tailwind.css');
+@import url("./assets/css/tailwind.css");
 @import url("./assets/css/animate.min.css");
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
   --themeColor: #646cff;
-  --color: rgba(255, 255, 255, 0.87); 
+  --color: rgba(255, 255, 255, 0.87);
   --reverColor: #000000;
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
@@ -52,15 +52,18 @@ button {
   cursor: pointer;
   transition: border-color 0.25s;
 }
+button:active{
+  scale: 0.9;
+}
+button:focus{
+  border-color: transparent;
+  outline-color: transparent;
+}
 
-button:hover {
+#app button:hover {
   border-color: var(--themeColor);
 }
 
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
 
 code {
   background-color: #1a1a1a;
@@ -93,7 +96,7 @@ button {
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
-    --color: #213547;
+    --color: #163a59;
     --reverColor: #ffffff;
     background-color: #ffffff;
   }
@@ -110,4 +113,3 @@ button {
     background-color: #f9f9f9;
   }
 }
-

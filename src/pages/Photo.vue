@@ -75,15 +75,21 @@ const renderToCanvas = () => {
   context.drawImage(video, x, y, newWidth, newHeight);
 
   // 获取 canvas 图像数据
-  const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-  const data = imageData.data;
+  let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+  let data = imageData.data;
 
   // 调整亮度、对比度和颜色通道
-  let { contrast, brightness } = state.fillterAgg;
+  let {
+    contrast,
+    brightness,
+    redMultiplier,
+    greenMultiplier,
+    blueMultiplier,
+    highlight,
+    shadows,
+  } = state.fillterAgg;
   contrast += 100;
   // brightness += 100;
-  // const brightness = 50; // 亮度调整值，可根据需求调整
-  // const contrast = 50; // 对比度调整值，可根据需求调整
   // const redMultiplier = 1.2; // 红色通道调整值，可根据需求调整
   // const greenMultiplier = 0.8; // 绿色通道调整值，可根据需求调整
   // const blueMultiplier = 1; // 蓝色通道调整值，可根据需求调整
@@ -94,19 +100,32 @@ const renderToCanvas = () => {
     data[i + 1] += brightness;
     data[i + 2] += brightness;
 
-    // // 调整颜色通道
-    // data[i] *= redMultiplier;
-    // data[i + 1] *= greenMultiplier;
-    // data[i + 2] *= blueMultiplier;
+    // 调整颜色通道
+    data[i] *= (redMultiplier + 100) / 100;
+    data[i + 1] *= (greenMultiplier + 100) / 100;
+    data[i + 2] *= (blueMultiplier + 100) / 100;
 
     // 调整对比度
     const r = data[i];
     const g = data[i + 1];
     const b = data[i + 2];
-
     data[i] = ((r - 128) * contrast) / 100 + 128;
     data[i + 1] = ((g - 128) * contrast) / 100 + 128;
     data[i + 2] = ((b - 128) * contrast) / 100 + 128;
+
+    // 增加高光部分的亮度
+    if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) {
+      data[i] += highlight;
+      data[i + 1] += highlight;
+      data[i + 2] += highlight;
+    }
+
+    var newR = 0.393 * r + 0.769 * g + 0.189 * b;
+    var newG = 0.349 * r + 0.686 * g + 0.168 * b;
+    var newB = 0.272 * r + 0.534 * g + 0.131 * b;
+
+    var rgbArr = [newR, newG, newB];
+    [data[i], data[i + 1], data[i + 2]] = rgbArr;
   }
 
   // 将处理后的图像绘制回 canvas 上

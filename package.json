@@ -45,6 +45,7 @@
     "dayjs": "^1.11.9",
     "electron-win-state": "^1.1.22",
     "element-plus": "^2.3.8",
+    "face-api.js": "^0.22.2",
     "lodash": "^4.17.21",
     "lzyutils": "^1.0.1",
     "pinia": "^2.1.6",
