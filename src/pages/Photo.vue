@@ -1,27 +1,26 @@
 <script setup lang="ts">
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
-import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue";
+import { nextTick, provide, ref, onBeforeUnmount, reactive, computed, toRaw } from "vue";
 import type { Ref } from "vue";
 import { useEventListener } from "@vueuse/core";
-import { Siderbar } from "@/typing/SideBarType";
-import { popup } from "@/components/lzyCompontens/popup";
+
 import { ElNotification, ElButton } from "element-plus";
 import { useStore } from "@/store/store";
-import { formatDuraton } from "lzyutils";
+import { formatDuration } from "@/utils/lzyutils";
+
+import {
+  resizeRatio,
+  siderbar,
+  change_per_pix,
+  getGrayAverage,
+  makeContrast,
+} from "@/utils/photoUtils";
+import PhotoList from "@/components/PhotoList.vue";
+import { videoFileDataType } from "@/typing/_PhotoType";
+
 const state = useStore();
-const siderbar: Siderbar[] = [
-  {
-    title: "调整",
-    name: "adjust",
-    icon: "teenyicons:adjust-horizontal-alt-outline",
-  },
-  {
-    title: "比例",
-    name: "ratio",
-    icon: "solar:crop-broken",
-  },
-];
+
 provide("RenderView", siderbar);
 interface MediaparasType {
   // 媒体流对象
@@ -32,12 +31,15 @@ interface MediaparasType {
   chunks: BlobPart[];
   //录制时间
   time: number;
+  //文件大小
+  fileSize: number;
 }
 const mediaParas = reactive<MediaparasType>({
   mediaStream: null,
   mediaRecorder: null,
   chunks: [],
   time: 0,
+  fileSize: 0,
 });
 // 视频元素引用
 const videoElement: Ref<HTMLVideoElement | null> = ref(null);
@@ -70,7 +72,7 @@ const renderToCanvas = () => {
   const canvas = canvasElement.value!;
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
   // 计算视频在 Canvas 中的适配宽高
-  const { x, y, newWidth, newHeight } = resizeRatio();
+  const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
   // 将视频渲染到 canvas 上
   context.drawImage(video, x, y, newWidth, newHeight);
 
@@ -79,21 +81,10 @@ const renderToCanvas = () => {
   let data = imageData.data;
 
   // 调整亮度、对比度和颜色通道
-  let {
-    contrast,
-    brightness,
-    redMultiplier,
-    greenMultiplier,
-    blueMultiplier,
-    saturation,
-    hue,
-  } = state.fillterAgg;
+  let { contrast, brightness, saturation, hue } = state.fillterAgg;
   // contrast += 100;
   contrast = contrast / 100;
   brightness = brightness / 100;
-  redMultiplier = redMultiplier / 100;
-  greenMultiplier = greenMultiplier / 100;
-  blueMultiplier = blueMultiplier / 100;
   saturation = saturation / 100;
   hue = hue / 100;
   for (let i = 0; i < data.length; i += 4) {
@@ -113,111 +104,6 @@ const renderToCanvas = () => {
   // 继续渲染下一帧
   requestAnimationFrame(renderToCanvas);
 };
-// 计算某个 帧的 灰度平均值
-function getGrayAverage(imagePixArray) {
-  var average = function (dataArray) {
-    let pixCount = dataArray.length / 4;
-    let sum = 0;
-    for (let i = 0; i < pixCount; i++) {
-      const pixOffset = i * 4;
-      let r = dataArray[pixOffset];
-      let g = dataArray[pixOffset + 1];
-      let b = dataArray[pixOffset + 2];
-      sum = sum + (0.299 * r + 0.587 * b + 0.114 * g);
-    }
-    let aver = sum / dataArray.length;
-    return aver;
-  };
-  return average(imagePixArray);
-}
-
-// 对每个像素点 调节 数值
-function change_per_pix(param, dataArray, offset) {
-  // 从 rgb 转成成 hls
-  let r = dataArray[offset];
-  let g = dataArray[offset + 1];
-  let b = dataArray[offset + 2];
-  let from = [r, g, b];
-  let hsl = window.colorconv.RGB2HSL(from);
-
-  //处理 色度
-  if (param.hue && param.hue != 0) {
-    // delta 的区间 [-360,360]
-    const delta = param.hue * 360;
-    let hue = hsl[0] + delta;
-    if (hue < 0) hue = 0;
-    if (hue > 360) hue = 360;
-    //postMsg(str);
-    hsl[0] = hue;
-  }
-  // 处理 饱和度
-  if (param.saturation && param.saturation != 0) {
-    // delta 的区间 [-100,100]
-    const delta = parseFloat(param.saturation) * 100;
-    let saturation = hsl[1] + delta;
-    if (saturation < 0) saturation = 0;
-    if (saturation > 100) saturation = 100;
-    hsl[1] = saturation;
-  }
-  // 处理 亮度
-  if (param.brightness && param.brightness != 0) {
-    // delta 的区间 [-100,100]
-    const delta = parseFloat(param.brightness) * 100;
-    let brightness = hsl[2] + delta;
-    if (brightness < 0) brightness = 0;
-    if (brightness > 100) brightness = 100;
-    hsl[2] = brightness;
-  }
-
-  // 从 hls 转回去 rgb
-  let newColor = window.colorconv.HSL2RGB(hsl);
-  dataArray[offset] = newColor[0];
-  dataArray[offset + 1] = newColor[1];
-  dataArray[offset + 2] = newColor[2];
-}
-function makeContrast(dataArray, average, contrast) {
-  let pixCount = dataArray.length / 4;
-  for (let i = 0; i < pixCount; i++) {
-    const pixOffset = i * 4;
-    let r = dataArray[pixOffset];
-    let g = dataArray[pixOffset + 1];
-    let b = dataArray[pixOffset + 2];
-    let newR = r + ((r - average) * contrast) / 255;
-    let newG = g + ((g - average) * contrast) / 255;
-    let newB = b + ((b - average) * contrast) / 255;
-    if (newR < 0) newR = 0;
-    if (newR > 255) newR = 255;
-    if (newG < 0) newG = 0;
-    if (newG > 255) newG = 255;
-    if (newB < 0) newB = 0;
-    if (newB > 255) newR = 255;
-    dataArray[pixOffset] = newR;
-    dataArray[pixOffset + 1] = newG;
-    dataArray[pixOffset + 2] = newB;
-  }
-}
-function resizeRatio() {
-  const originalWidth = videoElement.value!.videoWidth;
-  const originalHeight = videoElement.value!.videoHeight;
-
-  // 计算视频在 Canvas 中的适配宽高
-  const aspectRatio = originalWidth / originalHeight;
-  let newWidth = canvasElement.value!.width;
-  let newHeight = canvasElement.value!.height;
-
-  if (aspectRatio > 1) {
-    // 宽度较大，根据 Canvas 宽度计算适配高度
-    newHeight = canvasElement.value!.width / aspectRatio;
-  } else {
-    // 高度较大，根据 Canvas 高度计算适配宽度
-    newWidth = canvasElement.value!.height * aspectRatio;
-  }
-
-  // 计算视频在 Canvas 中的居中位置
-  const x = (canvasElement.value!.width - newWidth) / 2;
-  const y = (canvasElement.value!.height - newHeight) / 2;
-  return { x, y, newWidth, newHeight };
-}
 
 const hasStartFlag = ref<boolean>(false);
 // 开始录制
@@ -239,33 +125,36 @@ const startRecording = () => {
     stopRecording();
   }
 };
-
+const videoFileData = reactive<videoFileDataType>({
+  fileName: "",
+  createTime: "",
+  fileSize: 0,
+});
 // 停止录制
 const stopRecording = () => {
   if (mediaParas.mediaRecorder && hasStartFlag.value === true) {
     mediaParas.mediaRecorder.stop();
     hasStartFlag.value = false;
-    console.log("停止录制");
+    const timestamp = new Date().getTime();
+    const randomStr = Math.random().toString(36).substr(2, 5);
+    videoFileData.fileName = `video_${timestamp}_${randomStr}.webm`;
+    videoFileData.createTime = new Date().toLocaleString();
+    console.log("停止录制", videoFileData, mediaParas.fileSize);
   }
 };
 
 // 处理录制的数据块
 const handleDataAvailable = (event: BlobEvent) => {
+  mediaParas.chunks = [];
   if (event.data.size > 0) {
     mediaParas.chunks.push(event.data);
+    mediaParas.fileSize = event.data.size;
     //弹出窗口，让用户确认存储地址
-    popup({
-      svgImg: "images/dvg.png",
-      title: "温馨提示",
-      info: "是否保存视频",
-      confirm: () => {
-        sendBlobToMainProcess();
-      },
-    });
+    // sendBlobToMainProcess();
   }
 };
-
-function sendBlobToMainProcess() {
+//保存视频/* isSaveAs 是否另存为 */
+function sendBlobToMainProcess(isSaveAs) {
   // 将 Blob 数据转换为 ArrayBuffer 或 Base64 字符串
   // 这里使用 ArrayBuffer 作为示例，你可以根据需要选择其他方式
   if (mediaParas.chunks.length > 0) {
@@ -274,20 +163,49 @@ function sendBlobToMainProcess() {
     reader.onload = () => {
       const arrayBuffer = reader.result;
       // 发送 Blob 数据给主进程
-      window.myElectron.onDeviceVideo(arrayBuffer).then((res) => {
+      window.myElectron.onDeviceVideo({ arrayBuffer, isSaveAs }).then((res) => {
         if (res === "Error") return;
-        ElNotification({
-          title: "保存成功",
-          dangerouslyUseHTMLString: true,
-          message: res,
-          type: "success",
-        });
+        saveSuccess(res); //保存成功后
       });
     };
     //先转成ArrayBuffer 读取完成后再转成ArrayBuffer 先走完这个再走onload
     reader.readAsArrayBuffer(blobData);
+  } else {
+    ElNotification.closeAll();
+    ElNotification({
+      title: "保存失败",
+      message: "请先录制视频",
+      type: "error",
+    });
   }
 }
+const getStorage = ref<videoFileDataType[]>([]);
+const myVideolist = localStorage.getItem("myVideolist");
+if (myVideolist) {
+  getStorage.value = JSON.parse(myVideolist) as [];
+}
+function saveSuccess(res) {
+  ElNotification.closeAll();
+  ElNotification({
+    title: "保存成功",
+    dangerouslyUseHTMLString: true,
+    message: res,
+    type: "success",
+  });
+  const data = {
+    fileName: videoFileData.fileName,
+    createTime: videoFileData.createTime,
+    fileSize: mediaParas.fileSize,
+  };
+  getStorage.value.push(data);
+  localStorage.setItem("myVideolist", JSON.stringify(getStorage.value));
+  //视频保存成功后清空数据
+  mediaParas.chunks = [];
+  Object.keys(videoFileData).forEach((key) => {
+    videoFileData[key] = "";
+  });
+}
+
 const activeTool = ref<string>("adjust");
 //切换工具
 const changeTools = (val: string) => {
@@ -297,13 +215,13 @@ const changeTools = (val: string) => {
 nextTick(() => {
   initCamera();
   //视频宽度默认为父元素宽度
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 40 || 640;
+  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 20 || 640;
 });
 
 // canvasWidth随着页面宽度变化而变化
 useEventListener("resize", () => {
   // 最大最小值
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 40 || 640;
+  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
   if (canvasWidth.value > 1180) canvasWidth.value = 1180;
   if (canvasWidth.value < 640) canvasWidth.value = 640;
 });
@@ -318,16 +236,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="revimg pt-10 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden"
+    class="revimg pt-1 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden"
   >
     <!-- 侧边栏 -->
     <Sidebar @changeTools="changeTools"></Sidebar>
     <!-- 操作栏 -->
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
-    <div class="viewContent pt-0 px-1">
+    <div
+      class="h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[auto_35px_minmax(200px,1fr)] gap-3"
+    >
       <canvas
-        class="border-double border-2"
+        class="border-double border-2 m-auto"
         ref="canvasElement"
         :width="canvasWidth"
         :height="canvasHeight"
@@ -341,44 +261,45 @@ onBeforeUnmount(() => {
         autoplay
       ></video>
 
-      <div class="outcontent flex justify-between gap-5 pr-8 mt-5">
-        <el-button class="px-0" @click="startRecording" color="#626aef">
-          <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
-            <LzyIcon name="mdi:stopwatch-start-outline"></LzyIcon>开始录制
-          </span>
-          <span class="flex place-content-center place-items-center" v-else>
-            <LzyIcon name="ph:stop-circle"></LzyIcon>结束录制
-          </span>
-        </el-button>
-        <div class="time w-44 text-center rounded h-8 leading-8 select-none">
-          录制时长：{{ formatDuraton(mediaParas.time) }}
+      <div class="outcontent flex justify-between gap-5 px-4">
+        <div>
+          <ElButton class="px-2 bg-[#626aef] text-white" @click="startRecording">
+            <span class="btnSpan" v-if="!hasStartFlag">
+              <LzyIcon name="mdi:stopwatch-start-outline"></LzyIcon>开始录制
+            </span>
+            <span class="btnSpan" v-else>
+              <LzyIcon name="ph:stop-circle" style="color: red"></LzyIcon>结束录制
+            </span>
+          </ElButton>
+          <a class="ml-5 underline">{{ videoFileData.fileName }}</a>
         </div>
-        <!-- <el-button color="#626aef" :disabled="!hasStartFlag">
-          <LzyIcon name="ph:stop-circle"></LzyIcon>
-          停止录制
-        </el-button> -->
+        <div class="flex gap-1">
+          <ElButton
+            class="px-2 bg-[#626aef] text-white"
+            @click="sendBlobToMainProcess(false)"
+          >
+            保存视频
+          </ElButton>
+          <ElButton
+            class="px-2 m-0 bg-[#626aef] text-white"
+            @click="sendBlobToMainProcess(true)"
+          >
+            视频另存为
+          </ElButton>
+          <div
+            class="time px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none"
+          >
+            录制时长：{{ formatDuration(mediaParas.time) }}
+          </div>
+        </div>
       </div>
+      <PhotoList :videoFileData="getStorage!"></PhotoList>
     </div>
   </div>
 </template>
 
 <style lang="scss">
-.revimg {
-  -webkit-user-drag: none;
-}
-.viewContent {
-  height: calc(100vh - 80px);
-
-  video {
-    width: 100%;
-    height: 45%;
-    object-fit: contain;
-  }
-}
-.outcontent {
-  .time {
-    background-color: var(--themeColor);
-    color: var(--reverColor);
-  }
+.btnSpan {
+  @apply flex place-content-center place-items-center;
 }
 </style>

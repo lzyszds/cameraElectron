@@ -1,9 +1,6 @@
 export interface FillterAgg {
   contrast: number,
   brightness: number,
-  redMultiplier: number,
-  greenMultiplier: number,
-  blueMultiplier: number,
   saturation: number, 
   hue: number,
   // saturation: number,

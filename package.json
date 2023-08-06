@@ -48,7 +48,7 @@
     "element-plus": "^2.3.8",
     "face-api.js": "^0.22.2",
     "lodash": "^4.17.21",
-    "lzyutils": "^1.0.1",
+    "lzyutils": "^1.0.2",
     "pinia": "^2.1.6",
     "postcss": "^8.4.27",
     "sass": "^1.64.1",

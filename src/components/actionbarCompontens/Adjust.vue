@@ -5,9 +5,6 @@ const state = useStore();
 state.fillterAgg = {
   contrast: 0 as number,
   brightness: 0 as number,
-  redMultiplier: 0 as number,
-  greenMultiplier: 0 as number,
-  blueMultiplier: 0 as number,
   saturation: 0 as number,
   hue: 0 as number,
 };
@@ -22,23 +19,8 @@ const fillCompontens = {
     min: -50,
     max: 50,
   },
-  redMultiplier: {
-    name: "红色通道",
-    min: -50,
-    max: 50,
-  },
-  greenMultiplier: {
-    name: "绿色通道",
-    min: -50,
-    max: 50,
-  },
-  blueMultiplier: {
-    name: "蓝色通道",
-    min: -50,
-    max: 50,
-  },
   saturation: {
-    name: "高光",
+    name: "饱和度",
     min: -50,
     max: 50,
   },

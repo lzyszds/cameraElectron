@@ -31,6 +31,7 @@ const components = {
   grid-template-rows: 36px 1fr;
 }
 
+
 nav.navbar {
   grid-row: 1/2;
 }

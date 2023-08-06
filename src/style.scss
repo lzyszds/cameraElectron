@@ -35,6 +35,11 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+//用户选中时的背景颜色
+::selection {
+  background-color: var(--themeColor);
+  color: var(--reverColor);
+}
 
 h1 {
   font-size: 3.2em;

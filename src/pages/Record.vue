@@ -28,8 +28,8 @@ onMounted(() => {
         )
           .withFaceLandmarks()
           .withFaceDescriptors()
-          .withFaceExpressions()
-          // .withAgeAndGender();
+          .withFaceExpressions();
+        // .withAgeAndGender();
         const resizedDetections = resizeResults(detections, {
           width: videoElement.value!.videoWidth,
           height: videoElement.value!.videoHeight,
@@ -84,7 +84,7 @@ onMounted(() => {
   position: relative;
 }
 .items canvas,
-video {
+.items video {
   position: absolute;
   top: 50%;
   left: 50%;

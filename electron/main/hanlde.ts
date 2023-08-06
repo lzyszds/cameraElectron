@@ -34,10 +34,15 @@ export const onDeviceVideo = (win, app) => {
   ipcMain.handle('onDeviceVideo', (event, arg) => {
     let filePath: string = ''
     try {
-      filePath = dialog.showOpenDialogSync({
-        title: '选择视频保存路径',
-        properties: ['openDirectory'],
-      })[0]
+      if (arg.isSaveAs) {
+        filePath = dialog.showOpenDialogSync({
+          title: '选择视频保存路径',
+          properties: ['openDirectory'],
+        })[0]
+      } else if (!arg.isSave && mkdirsSync(app.getPath('documents') + '/ytjs')) {
+        filePath = app.getPath('documents') + '/ytjs'
+      }
+
     } catch (e) {
       return 'Error'
     }
@@ -50,7 +55,7 @@ export const onDeviceVideo = (win, app) => {
     const fileName = `/video_${timestamp}_${randomStr}.webm`;
     filePath += fileName;
     // 写入文件
-    fs.writeFileSync(filePath, Buffer.from(arg));
+    fs.writeFileSync(filePath, Buffer.from(arg.arrayBuffer));
     return filePath//返回给渲染器，返回的是一个promise
   })
 }
