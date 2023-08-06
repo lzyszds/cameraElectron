@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
-import { nextTick, provide, ref, onBeforeUnmount, reactive, computed, toRaw } from "vue";
+import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue";
 import type { Ref } from "vue";
 import { useEventListener } from "@vueuse/core";
 
@@ -9,13 +9,7 @@ import { ElNotification, ElButton } from "element-plus";
 import { useStore } from "@/store/store";
 import { formatDuration } from "@/utils/lzyutils";
 
-import {
-  resizeRatio,
-  siderbar,
-  change_per_pix,
-  getGrayAverage,
-  makeContrast,
-} from "@/utils/photoUtils";
+import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
 import { videoFileDataType } from "@/typing/_PhotoType";
 
@@ -66,44 +60,51 @@ const desiredAspectRatio = 16 / 9;
 const canvasWidth = ref(640); // 可以根据实际情况设置画布的宽度
 const canvasHeight = computed(() => canvasWidth.value / desiredAspectRatio);
 
-//将视频渲染进canvas
+// 将视频渲染进canvas
 const renderToCanvas = () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
-  const context = canvas.getContext("2d", { willReadFrequently: true })!;
-  // 计算视频在 Canvas 中的适配宽高
-  const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
-  // 将视频渲染到 canvas 上
-  context.drawImage(video, x, y, newWidth, newHeight);
+  const context = canvas.getContext("2d", { willReadFrequently: true });
 
-  // 获取 canvas 图像数据
-  let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-  let data = imageData.data;
+  // 在 OffscreenCanvas 中渲染视频帧
+  const offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+  const offscreenContext = offscreenCanvas.getContext(
+    "2d"
+  ) as OffscreenCanvasRenderingContext2D;
+  const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
+  offscreenContext.drawImage(video, x, y, newWidth, newHeight);
+
+  // 获取 OffscreenCanvas 图像数据
+  const imageData = offscreenContext.getImageData(0, 0, canvas.width, canvas.height);
 
   // 调整亮度、对比度和颜色通道
   let { contrast, brightness, saturation, hue } = state.fillterAgg;
-  // contrast += 100;
   contrast = contrast / 100;
   brightness = brightness / 100;
   saturation = saturation / 100;
   hue = hue / 100;
-  for (let i = 0; i < data.length; i += 4) {
-    //背景透明
-    // let r = data[i];
-    // let g = data[i + 1];
-    // let b = data[i + 2];
-    // if (g > 100 && r > 100 && b < 43) data[i + 3] = 0;
-    change_per_pix({ hue, saturation, brightness, contrast }, data, i);
-  }
-  if (contrast && contrast != 0) {
-    let avg = getGrayAverage(data);
-    makeContrast(data, avg, contrast * 255);
-  }
-  // 将处理后的图像绘制回 canvas 上
-  context.putImageData(imageData, 0, 0);
-  // 继续渲染下一帧
-  requestAnimationFrame(renderToCanvas);
+
+  // 使用 Web Workers 处理图像数据
+  const worker = new Worker("/src/utils/worker.js");
+  worker.postMessage({
+    imageData: imageData,
+    params: { hue, saturation, brightness, contrast },
+  });
+  worker.onmessage = (event) => {
+    // 获取处理后的图像数据
+    const processedImageData = event.data;
+    context!.putImageData(processedImageData, 0, 0);
+
+    // 继续渲染下一帧
+    requestAnimationFrame(renderToCanvas);
+  };
 };
+
+//背景透明
+// let r = data[i];
+// let g = data[i + 1];
+// let b = data[i + 2];
+// if (g > 100 && r > 100 && b < 43) data[i + 3] = 0;
 
 const hasStartFlag = ref<boolean>(false);
 // 开始录制

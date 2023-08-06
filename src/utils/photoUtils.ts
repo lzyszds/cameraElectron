@@ -59,46 +59,54 @@ export function getGrayAverage(imagePixArray) {
 }
 
 
-// 对每个像素点 调节 数值
+/**
+ * 对每个像素点进行颜色调整
+ * @param {Object} param - 包含 hue, saturation 和 brightness 调整参数的对象
+ * @param {Uint8ClampedArray} dataArray - 视频帧数据，通常是一个 Uint8ClampedArray 类型
+ * @param {number} offset - 当前像素点在 dataArray 中的偏移量，通常是每个像素由 RGBA 四个通道组成，所以 offset 表示 R 通道的索引
+ */
 export function change_per_pix(param, dataArray, offset) {
-  // 从 rgb 转成成 hls
-  let r = dataArray[offset];
-  let g = dataArray[offset + 1];
-  let b = dataArray[offset + 2];
-  let from = [r, g, b];
-  let hsl = rgbToHsl(from);
+  // 从 RGB 转换为 HLS
+  const r = dataArray[offset];
+  const g = dataArray[offset + 1];
+  const b = dataArray[offset + 2];
+  const from = [r, g, b];
 
-  //处理 色度
-  if (param.hue && param.hue != 0) {
-    // delta 的区间 [-360,360]
+  if (Object.keys(param).some((key) => param[key] === 0)) {
+    return;
+  }
+
+  const hsl = rgbToHsl(from);
+
+  // 处理色度
+  if (param.hue && param.hue !== 0) {
+    // 色度的区间 [-0.5, 0.5]
     const delta = param.hue * 360;
     let hue = hsl[0] + delta;
-    if (hue < 0) hue = 0;
-    if (hue > 360) hue = 360;
-    //postMsg(str);
+    hue = Math.max(0, Math.min(360, hue));
     hsl[0] = hue;
   }
-  // 处理 饱和度
-  if (param.saturation && param.saturation != 0) {
-    // delta 的区间 [-100,100]
-    const delta = parseFloat(param.saturation) * 100;
+
+  // 处理饱和度
+  if (param.saturation && param.saturation !== 0) {
+    // 饱和度的区间 [-0.5, 0.5]
+    const delta = param.saturation * 100;
     let saturation = hsl[1] + delta;
-    if (saturation < 0) saturation = 0;
-    if (saturation > 100) saturation = 100;
+    saturation = Math.max(0, Math.min(100, saturation));
     hsl[1] = saturation;
   }
-  // 处理 亮度
-  if (param.brightness && param.brightness != 0) {
-    // delta 的区间 [-100,100]
-    const delta = parseFloat(param.brightness) * 100;
+
+  // 处理亮度
+  if (param.brightness && param.brightness !== 0) {
+    // 亮度的区间 [-0.5, 0.5]
+    const delta = param.brightness * 100;
     let brightness = hsl[2] + delta;
-    if (brightness < 0) brightness = 0;
-    if (brightness > 100) brightness = 100;
+    brightness = Math.max(0, Math.min(100, brightness));
     hsl[2] = brightness;
   }
 
-  // 从 hls 转回去 rgb
-  let newColor = hslToRgb(hsl);
+  // 从 HLS 转换回 RGB
+  const newColor = hslToRgb(hsl);
   dataArray[offset] = newColor[0];
   dataArray[offset + 1] = newColor[1];
   dataArray[offset + 2] = newColor[2];
