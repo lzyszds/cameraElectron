@@ -60,6 +60,8 @@ const desiredAspectRatio = 16 / 9;
 const canvasWidth = ref(640); // 可以根据实际情况设置画布的宽度
 const canvasHeight = computed(() => canvasWidth.value / desiredAspectRatio);
 
+const worker = new Worker("/src/utils/worker.js");
+
 // 将视频渲染进canvas
 const renderToCanvas = () => {
   const video = videoElement.value!;
@@ -84,8 +86,6 @@ const renderToCanvas = () => {
   saturation = saturation / 100;
   hue = hue / 100;
 
-  // 使用 Web Workers 处理图像数据
-  const worker = new Worker("/src/utils/worker.js");
   worker.postMessage({
     imageData: imageData,
     params: { hue, saturation, brightness, contrast },
