@@ -12,12 +12,14 @@ onmessage = (event) => {
   }
   // 处理对比度
   if (params.contrast && params.contrast != 0) {
-    let avg = getGrayAverage(data);
+    const avg = getGrayAverage(data);
     makeContrast(data, avg, params.contrast * 255);
   }
   // 返回处理后的图像数据
   postMessage(imageData);
 };
+
+
 
 function change_per_pix(param, dataArray, offset) {
   // 从 RGB 转换为 HLS

@@ -91,6 +91,6 @@ onMounted(() => {
   transform: translate(-50%, -50%);
 }
 canvas {
-  z-index: 999;
+  z-index: 1;
 }
 </style>

@@ -3,7 +3,7 @@ import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue";
 import type { Ref } from "vue";
-import { useEventListener } from "@vueuse/core";
+import { useEventListener, useStorage } from "@vueuse/core";
 
 import { ElNotification, ElButton } from "element-plus";
 import { useStore } from "@/store/store";
@@ -11,23 +11,12 @@ import { formatDuration } from "@/utils/lzyutils";
 
 import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
-import { videoFileDataType } from "@/typing/_PhotoType";
+import { videoFileDataType, MediaparasType } from "@/typing/_PhotoType";
 
 const state = useStore();
 
 provide("RenderView", siderbar);
-interface MediaparasType {
-  // 媒体流对象
-  mediaStream: MediaStream | null;
-  // 媒体录制对象
-  mediaRecorder: MediaRecorder | null;
-  // 录制的数据块
-  chunks: BlobPart[];
-  //录制时间
-  time: number;
-  //文件大小
-  fileSize: number;
-}
+
 const mediaParas = reactive<MediaparasType>({
   mediaStream: null,
   mediaRecorder: null,
@@ -60,6 +49,7 @@ const desiredAspectRatio = 16 / 9;
 const canvasWidth = ref(640); // 可以根据实际情况设置画布的宽度
 const canvasHeight = computed(() => canvasWidth.value / desiredAspectRatio);
 
+// 使用 Web Workers 处理图像数据
 const worker = new Worker("/src/utils/worker.js");
 
 // 将视频渲染进canvas
@@ -130,6 +120,7 @@ const videoFileData = reactive<videoFileDataType>({
   fileName: "",
   createTime: "",
   fileSize: 0,
+  filePath: "",
 });
 // 停止录制
 const stopRecording = () => {
@@ -164,7 +155,8 @@ function sendBlobToMainProcess(isSaveAs) {
     reader.onload = () => {
       const arrayBuffer = reader.result;
       // 发送 Blob 数据给主进程
-      window.myElectron.onDeviceVideo({ arrayBuffer, isSaveAs }).then((res) => {
+      window.myElectron.saveDeviceVideo({ arrayBuffer, isSaveAs }).then((res) => {
+        console.log(`lzy  res:`, res);
         if (res === "Error") return;
         saveSuccess(res); //保存成功后
       });
@@ -177,14 +169,18 @@ function sendBlobToMainProcess(isSaveAs) {
       title: "保存失败",
       message: "请先录制视频",
       type: "error",
+      duration: 1000,
     });
   }
 }
-const getStorage = ref<videoFileDataType[]>([]);
-const myVideolist = localStorage.getItem("myVideolist");
-if (myVideolist) {
-  getStorage.value = JSON.parse(myVideolist) as [];
-}
+// const getStorage = ref<videoFileDataType[]>([]);
+// const myVideolist = localStorage.getItem("myVideolist");
+// if (myVideolist) {
+//   getStorage.value = JSON.parse(myVideolist) as [];
+// }
+const storage = useStorage("myVideolist", [] as videoFileDataType[]);
+const getStorage = computed(() => storage.value);
+//保存成功后
 function saveSuccess(res) {
   ElNotification.closeAll();
   ElNotification({
@@ -192,14 +188,16 @@ function saveSuccess(res) {
     dangerouslyUseHTMLString: true,
     message: res,
     type: "success",
+    duration: 1000,
   });
   const data = {
     fileName: videoFileData.fileName,
     createTime: videoFileData.createTime,
     fileSize: mediaParas.fileSize,
+    filePath: res,
   };
   getStorage.value.push(data);
-  localStorage.setItem("myVideolist", JSON.stringify(getStorage.value));
+  storage.value = getStorage.value;
   //视频保存成功后清空数据
   mediaParas.chunks = [];
   Object.keys(videoFileData).forEach((key) => {
@@ -236,17 +234,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div
-    class="revimg pt-1 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden"
-  >
+  <div class="revimg">
     <!-- 侧边栏 -->
     <Sidebar @changeTools="changeTools"></Sidebar>
     <!-- 操作栏 -->
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
-    <div
-      class="h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[auto_35px_minmax(200px,1fr)] gap-3"
-    >
+    <div class="revMain">
       <canvas
         class="border-double border-2 m-auto"
         ref="canvasElement"
@@ -287,11 +281,7 @@ onBeforeUnmount(() => {
           >
             视频另存为
           </ElButton>
-          <div
-            class="time px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none"
-          >
-            录制时长：{{ formatDuration(mediaParas.time) }}
-          </div>
+          <div class="transTime">录制时长：{{ formatDuration(mediaParas.time) }}</div>
         </div>
       </div>
       <PhotoList :videoFileData="getStorage!"></PhotoList>
@@ -300,6 +290,15 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss">
+.revimg {
+  @apply pt-1 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden;
+}
+.revMain {
+  @apply h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[auto_35px_minmax(200px,1fr)] gap-3;
+}
+.transTime {
+  @apply px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none;
+}
 .btnSpan {
   @apply flex place-content-center place-items-center;
 }
