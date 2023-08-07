@@ -1,16 +1,23 @@
 @import url("./assets/css/tailwind.css");
 @import url("./assets/css/animate.min.css");
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  --themeColor: #646cff;
-  --color: rgba(255, 255, 255, 0.87);
-  --reverColor: #000000;
+  --themeColor: rgb(36, 36, 36);
+  --themeColor_2: rgba(36, 36, 36, 0.4);
+  --themeColor_3: rgba(36, 36, 36, 0.8);
+  --setWindBtnColor: #eee;
+  --hoverColor: rgba(51 65 85);
+  --color: #000;
+  --reverColor: #fff;
+  --subtopicColor: rgb(150, 174, 211);
+  --scrollbarbg: #f1f1f1;
+  --bgColor: #ffffff;
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  color: #000;
+  background-color: var(--bgColor);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -40,6 +47,24 @@ body {
   background-color: var(--themeColor);
   color: var(--reverColor);
 }
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 100vh;
+  background: var(--scrollbarbg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color);
+  border-radius: 100vh;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--subtopicColor);
+}
 
 h1 {
   font-size: 3.2em;
@@ -49,18 +74,14 @@ h1 {
 button {
   border-radius: 8px;
   border: 1px solid transparent;
-  padding: 0em 0.4em 0.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
 }
-button:active{
-  scale: 0.9;
-}
-button:focus{
+button:focus,
+button:active {
   border-color: transparent;
   outline-color: transparent;
 }
@@ -68,7 +89,6 @@ button:focus{
 #app button:hover {
   border-color: var(--themeColor);
 }
-
 
 code {
   background-color: #1a1a1a;
@@ -98,12 +118,19 @@ button {
 }
 
 /* 这个例子使用了一个有黑色背景和白色文字的元素，当用户使用浅色主题时，会翻转黑白颜色。 */
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root {
-    color: #213547;
-    --color: #163a59;
-    --reverColor: #ffffff;
-    background-color: #ffffff;
+    --themeColor: #fff;
+    --themeColor_2: rgba(255, 255, 255, 0.4);
+    --themeColor_3: rgba(147, 147, 147, 0.8);
+    --hoverColor: rgb(201, 201, 201);
+    --setWindBtnColor: #99999930;
+    --color: #ffffff;
+    --reverColor: #000000;
+    --scrollbarbg: #1a1a1a;
+    --bgColor: rgb(36, 36, 36);
+    background-color: rgb(36, 36, 36);
+    color: #ffffff;
   }
 
   a:hover {

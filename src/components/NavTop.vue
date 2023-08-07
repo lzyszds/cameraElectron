@@ -49,34 +49,30 @@ const close = () => {
 
 <template>
   <!-- 顶部导航栏 -->
-  <nav class="navbar bg-body-tertiary">
-    <div class="logoitem">
-      <img src="/public/favicon.ico" alt="Logo" width="24" height="24" class="logo" />
-      <span>影天技术</span>
+  <nav class="navbar font-size-20 flex justify-between w-full font-[alimama] select-none">
+    <div class="flex p-[0.3em] items-center gap-1 no-drag">
+      <img src="/public/favicon.ico" width="24" height="24" class="rounded-full" />
+      <span class="text-base text-shadow">影天技术</span>
     </div>
-    <div class="contentChange">
-      <div
-        class="changeItem"
-        v-for="item of contentChangeValue"
-        :key="item.name"
-        :class="{ active: changeValue == item.name }"
-        @click="changeitem(item.name)"
-      >
+    <div class="grid gap-2 grid-cols-3 items-center w-52 no-drag text-base cursor-pointer">
+      <div class="flex justify-center rounded-md transition hover:bg-[var(--themeColor)] hover:text-[var(--reverColor)]"
+        v-for="item of contentChangeValue" :key="item.name" :class="{ active: changeValue == item.name }"
+        @click="changeitem(item.name)">
         {{ item.title }}
       </div>
     </div>
 
-    <div class="closeTools">
-      <button class="toolsbtn" @click="changeTheme">
-        <LzyIcon name="mdi:theme-light-dark"></LzyIcon>
+    <div class="grid grid-cols-4 w-48 no-drag">
+      <button class="windHandleBtn hover:bg-[var(--setWindBtnColor)]" @click="changeTheme">
+        <LzyIcon width="15px" height="15px" name="mdi:theme-light-dark"></LzyIcon>
       </button>
-      <button class="toolsbtn" @click="minimize">
+      <button class="windHandleBtn hover:bg-[var(--setWindBtnColor)]" @click="minimize">
         <LzyIcon name="mdi:horizontal-line"></LzyIcon>
       </button>
-      <button class="toolsbtn simple" @click="maximize">
-        <LzyIcon :name="hasMaximize ? 'ph:copy-simple-bold' : 'ph:rectangle-bold'"></LzyIcon>
+      <button class="windHandleBtn hover:bg-[var(--setWindBtnColor)] simple" @click="maximize">
+        <LzyIcon width="15px" height="15px" :name="hasMaximize ? 'ph:copy-simple-bold' : 'ph:rectangle-bold'"></LzyIcon>
       </button>
-      <button class="toolsbtn" @click="close">
+      <button class="windHandleBtn hover:bg-[#c42b1c] hover:text-[#fff]" @click="close">
         <LzyIcon name="iconamoon:close-bold"></LzyIcon>
       </button>
     </div>
@@ -84,92 +80,19 @@ const close = () => {
 </template>
 
 <style lang="scss" scoped>
-.navbar {
-  line-height: 24px;
-  font-size: 20px;
+.windHandleBtn {
+  border-radius: 0;
+  text-align: center;
+  border: none;
   display: flex;
-  justify-content: space-between;
-  width: 100%;
-  -webkit-app-region: drag; //拖动窗口
-  font-family: "alimama";
+  justify-content: center;
+  align-items: center;
+  background: var(--bgColor);
+}
 
-  .logoitem {
-    height: 24px;
-    display: flex;
-    padding: 0.3em;
-    align-items: center;
-
-    .logo {
-      vertical-align: middle;
-      margin-right: 0.2em;
-      border-radius: 50%;
-    }
-
-    span {
-      font-size: 16px;
-      text-shadow: 0 0 1px #000;
-      user-select: none;
-    }
-  }
-
-  .contentChange {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    justify-items: center;
-    align-items: center;
-    width: 200px;
-    //禁止拖动窗口
-    -webkit-app-region: no-drag;
-    font-size: 16px;
-    font-family: "dindin";
-    user-select: none;
-    cursor: pointer;
-
-    .changeItem {
-      width: 100%;
-      height: 70%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 5px;
-      transition: background 0.2s;
-
-      &.active,
-      &:hover {
-        background: var(--themeColor);
-        color: #fff;
-      }
-    }
-  }
-
-  .closeTools {
-    width: 180px;
-    display: grid;
-    grid-template-columns: repeat(4, 45px);
-    //禁止拖动窗口
-    -webkit-app-region: no-drag;
-
-    .toolsbtn {
-      background: none;
-      border: none;
-      outline: none;
-      cursor: pointer;
-      border-radius: 0;
-      transition: background 0.2s;
-
-      svg {
-        color: var(--color);
-      }
-      &.simple svg {
-        width: 15px;
-        height: 15px;
-        translate: 0 -2px;
-      }
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.1);
-      }
-    }
-  }
+.active {
+  color: var(--reverColor);
+  background-color: var(--themeColor);
+  border-radius: 5px;
 }
 </style>

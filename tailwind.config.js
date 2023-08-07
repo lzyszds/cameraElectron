@@ -1,11 +1,40 @@
 /** @type {import('tailwindcss').Config} */
+
+const plugin = require("tailwindcss/plugin");
+
 module.exports = {
   important: true,
-  content: [
-    "./index.html", "./src/**/*.{js,ts,jsx,tsx,vue}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx,vue}"],
   theme: {
-    extend: {}
+    extend: {},
   },
-  plugins: []
-}
+  plugins: [
+    plugin(function ({ addComponents }) {
+      addComponents({
+        ".btn": {
+          padding: ".25rem .5rem",
+          borderRadius: ".25rem",
+          fontWeight: "600",
+          backgroundColor: "var(--themeColor)",
+          color: "var(--reverColor)",
+          transition: "background-color .1375s",
+          border: "1px solid var(--themeColor)",
+          boxShadow: "1px 0px 1px 1px var(--themeColor_2)",
+          cursor: "pointer",
+          display: "flex",
+          "&:hover": {
+            backgroundColor: "var(--hoverColor)",
+            color: "var(--reverColor)",
+          },
+        },
+        ".darg": {
+          "-webkit-app-region": "drag",
+          pointerEvents: "none",
+        },
+        ".no-drag": {
+          "-webkit-app-region": "no-drag",
+        }
+      });
+    }),
+  ],
+};

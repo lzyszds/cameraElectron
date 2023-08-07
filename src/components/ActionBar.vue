@@ -36,11 +36,9 @@ const componentsItems = {
 
 <style lang="scss">
 .actionItemCard {
-  background: #fafafa;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.1), 0 4px 5px rgba(0, 0, 0, 0.15);
   border-radius: 8px;
+  border: 1px solid var(--themeColor);
   padding: 8px;
-  color: #111;
   margin-bottom: 8px;
   user-select: none;
 

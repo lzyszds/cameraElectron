@@ -26,4 +26,7 @@ const props = defineProps<Props>();
   cursor: pointer;
   vertical-align: text-bottom;
 }
+svg{
+  display: inline;
+}
 </style>

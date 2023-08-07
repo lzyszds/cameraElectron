@@ -29,7 +29,6 @@ const fillCompontens = {
     min: -30,
     max: 30,
   },
-
 };
 
 //获取滤镜组件返回的值
@@ -58,11 +57,8 @@ const reset = () => {
       :max="item.max"
       :name="item.name"
     ></LzyProgress>
-    <button
-      class="w-full mt-3 flex gap-1 text-sm pt-1 place-content-center place-items-center bg-white text-black border-indigo-400 border-[1px] rounded-xl"
-      @click="reset"
-    >
-      <LzyIcon width="15" name="ph:arrows-counter-clockwise-duotone"></LzyIcon>重置
+    <button class="btn text-sm gap-1" @click="reset">
+      <LzyIcon width="20" name="ph:arrows-counter-clockwise-duotone"></LzyIcon>重置
     </button>
   </div>
 </template>

@@ -11,51 +11,34 @@ const changeTools = (val) => {
 </script>
 
 <template>
-  <div class="sidebar">
+  <div class="flex flex-col gap-4 mb-[200px]">
     <div
       v-for="item in siderbar"
       :key="item.name"
-      class="sidebarItem"
+      class="sidebarItem flex flex-col justify-center items-center h-16 w-full cursor-pointer"
       :class="{ active: activeTool === item.name }"
       @click="changeTools(item.name)"
     >
       <LzyIcon :name="item.icon"></LzyIcon>
-      <span>{{ item.title }}</span>
+      <span class="text-[14px]">{{ item.title }}</span>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 200px;
-  gap: 15px;
-
-  .sidebarItem {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 60px;
-    width: 100%;
-    cursor: pointer;
-    &.active {
-      svg {
-        color: #fff;
-        background-color: var(--themeColor);
-        border-radius: 50%;
-      }
-    }
+.sidebarItem {
+  &.active {
     svg {
-      width: 25px;
-      height: 25px;
-      margin-bottom: 5px;
-      padding: 4px;
+      color: var(--reverColor);
+      background-color: var(--themeColor);
+      border-radius: 50%;
     }
-    span {
-      font-size: 13px;
-    }
+  }
+  svg {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 5px;
+    padding: 4px;
   }
 }
 </style>

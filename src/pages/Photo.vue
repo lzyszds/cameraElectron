@@ -234,54 +234,40 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="revimg">
+  <div class="pt-1 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden">
     <!-- 侧边栏 -->
     <Sidebar @changeTools="changeTools"></Sidebar>
     <!-- 操作栏 -->
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
-    <div class="revMain">
-      <canvas
-        class="border-double border-2 m-auto"
-        ref="canvasElement"
-        :width="canvasWidth"
-        :height="canvasHeight"
-        :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
-      ></canvas>
+    <div class="h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[1fr_35px_minmax(200px,1fr)] gap-3">
+      <canvas class="border-double border-2 m-auto" ref="canvasElement" :width="canvasWidth" :height="canvasHeight"
+        :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"></canvas>
       <!-- <video ref="video" autoplay></video> -->
-      <video
-        class="w-full h-[45%] object-contain"
-        ref="videoElement"
-        style="display: none"
-        autoplay
-      ></video>
+      <video class="w-full h-[45%] object-contain" ref="videoElement" style="display: none" autoplay></video>
 
       <div class="outcontent flex justify-between gap-5 px-4">
-        <div>
-          <ElButton class="px-2 bg-[#626aef] text-white" @click="startRecording">
-            <span class="btnSpan" v-if="!hasStartFlag">
+        <div class="flex">
+          <ElButton class="btn" @click="startRecording">
+            <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
               <LzyIcon name="mdi:stopwatch-start-outline"></LzyIcon>开始录制
             </span>
-            <span class="btnSpan" v-else>
+            <span class="flex place-content-center place-items-center" v-else>
               <LzyIcon name="ph:stop-circle" style="color: red"></LzyIcon>结束录制
             </span>
           </ElButton>
-          <a class="ml-5 underline">{{ videoFileData.fileName }}</a>
+          <a class="ml-5 underline leading-8">{{ videoFileData.fileName }}</a>
         </div>
         <div class="flex gap-1">
-          <ElButton
-            class="px-2 bg-[#626aef] text-white"
-            @click="sendBlobToMainProcess(false)"
-          >
+          <ElButton class="btn" @click="sendBlobToMainProcess(false)">
             保存视频
           </ElButton>
-          <ElButton
-            class="px-2 m-0 bg-[#626aef] text-white"
-            @click="sendBlobToMainProcess(true)"
-          >
+          <ElButton class="btn" @click="sendBlobToMainProcess(true)">
             视频另存为
           </ElButton>
-          <div class="transTime">录制时长：{{ formatDuration(mediaParas.time) }}</div>
+          <div class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none">
+            录制时长：{{ formatDuration(mediaParas.time) }}
+          </div>
         </div>
       </div>
       <PhotoList :videoFileData="getStorage!"></PhotoList>
@@ -290,16 +276,4 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss">
-.revimg {
-  @apply pt-1 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden;
-}
-.revMain {
-  @apply h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[auto_35px_minmax(200px,1fr)] gap-3;
-}
-.transTime {
-  @apply px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none;
-}
-.btnSpan {
-  @apply flex place-content-center place-items-center;
-}
 </style>
