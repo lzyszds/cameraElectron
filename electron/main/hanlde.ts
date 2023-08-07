@@ -1,77 +1,146 @@
-import { ipcMain, nativeTheme, dialog } from "electron"
-import fs from 'fs'
-import path from 'node:path'
+import { ipcMain, dialog, nativeTheme, } from 'electron';
+import type { BrowserWindow, App } from 'electron';
+import fs from 'fs';
+import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
 
-export const handleWin = (win, app) => {
-  //操作窗口（window）
-  ipcMain.handle('onHandleWin', (event, arg) => {
-    if (arg == 'close') {
-      //关闭窗口
-      win = null
-      if (process.platform !== 'darwin') app.quit()
-    } else if (arg == 'minimize') {
-      //最小化窗口
-      win?.minimize()
-    } else if (arg == 'maximize') {
-      //最大化窗口 判断是否最大化 如果是就还原
-      if (win?.isMaximized()) {
-        return win?.unmaximize()
+export class WindowManager {
+  private win: BrowserWindow;
+  private app: App;
+
+  constructor(win: BrowserWindow, app: App) {
+    this.win = win;
+    this.app = app;
+    this.registerHandleWin();
+    this.registerDeviceVideo();
+    this.registerDelToVideo();
+  }
+
+  // 处理窗口操作请求
+  private handleWinAction(arg: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      switch (arg) {
+        case 'close':
+          this.closeWindow(); // 关闭窗口
+          resolve('success');
+          break;
+        case 'minimize':
+          this.minimizeWindow(); // 最小化窗口
+          resolve('success');
+          break;
+        case 'maximize':
+          this.toggleMaximize(); // 最大化/还原窗口
+          resolve('success');
+          break;
+        case 'changeTheme':
+          this.toggleTheme(); // 切换主题
+          resolve('success');
+          break;
+        default:
+          reject(new Error('Invalid action'));
       }
-      win?.maximize()
-    } else if (arg == 'changeTheme') {
-      //切换主题
-      if (nativeTheme.shouldUseDarkColors) {
-        nativeTheme.themeSource = "light";
-      } else {
-        nativeTheme.themeSource = "dark";
-      }
+    });
+  }
+
+  // 处理 onHandleWin 请求
+  private onHandleWin(event: Electron.IpcMainInvokeEvent, arg: string): void {
+    this.handleWinAction(arg)
+      .then((response) => {
+        event.sender.send('onHandleWin', response)
+      })
+      .catch((error) => {
+        event.sender.send('onHandleWin', { error: error.message })
+      });
+  }
+
+  // 注册 onHandleWin 事件监听
+  private registerHandleWin(): void {
+    ipcMain.handle('onHandleWin', this.onHandleWin.bind(this));
+  }
+
+  // 关闭窗口
+  private closeWindow(): void {
+    this.win = null;
+    if (process.platform !== 'darwin') this.app.quit();
+  }
+
+  // 最小化窗口
+  private minimizeWindow(): void {
+    this.win?.minimize();
+  }
+
+  // 切换最大化/还原窗口
+  private toggleMaximize(): void {
+    if (this.win?.isMaximized()) {
+      this.win?.unmaximize();
+    } else {
+      this.win?.maximize();
     }
-    return 'success' //返回给渲染器，返回的是一个promise
-  })
-}
-//操作摄像头设备
-export const onDeviceVideo = (win, app) => {
-  ipcMain.handle('onDeviceVideo', (event, arg) => {
-    let filePath: string = ''
+  }
+
+  // 切换主题
+  private toggleTheme(): void {
+    nativeTheme.themeSource = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
+  }
+
+  // 处理 saveDeviceVideo 请求
+  private saveDeviceVideo(event: Electron.IpcMainInvokeEvent, arg: any): Promise<string> {
+    return new Promise((resolve, reject) => {
+      try {
+        let filePath = '';
+
+        if (arg.isSaveAs) {
+          filePath = dialog.showOpenDialogSync({
+            title: '选择视频保存路径',
+            properties: ['openDirectory'],
+          })[0];
+        } else if (!arg.isSave && mkdirsSync(`${this.app.getPath('documents')}/ytjs`)) {
+          filePath = `${this.app.getPath('documents')}/ytjs`;
+        }
+
+        const timestamp = new Date().getTime();
+        const randomStr = Math.random().toString(36).substr(2, 5);
+        const fileName = `/video_${timestamp}_${randomStr}.webm`;
+        filePath += fileName;
+
+        fs.writeFileSync(filePath, Buffer.from(arg.arrayBuffer));
+        resolve(filePath)
+      } catch (e) {
+        reject(e)
+      }
+    })
+  }
+
+  // 注册 saveDeviceVideo 事件监听
+  private registerDeviceVideo(): void {
+    ipcMain.handle('saveDeviceVideo', this.saveDeviceVideo.bind(this));
+  }
+  // 删除指定视频
+  private async onDelToVideo(event: Electron.IpcMainInvokeEvent, arg: any)
+    : Promise<{ type: 'success' | 'error', message: string, }> {
+    console.log(`lzy  arg:`, arg)
     try {
-      if (arg.isSaveAs) {
-        filePath = dialog.showOpenDialogSync({
-          title: '选择视频保存路径',
-          properties: ['openDirectory'],
-        })[0]
-      } else if (!arg.isSave && mkdirsSync(app.getPath('documents') + '/ytjs')) {
-        filePath = app.getPath('documents') + '/ytjs'
-      }
-
+      fs.unlinkSync(arg);
+      return {
+        type: 'success',
+        message: arg,
+      };
     } catch (e) {
-      return 'Error'
+      // 假设变量 e 包含错误信息
+      // 检查错误提示是否为文件不存在，并设置对应的消息
+      let message;
+      if (checkFileFoundError.checkFileNotFoundError(e)) {
+        message = "文件不存在，在此之前已删除";
+      } else if (checkFileFoundError.checkPermissionDeniedError(e)) {
+        message = "没有权限进行文件操作";
+      } else {
+        // 其他错误，使用错误消息本身
+        message = typeof e === 'string' ? e : e.message;
+      }
+      return { type: 'error', message };
     }
-    /*在这里可以进行对 Blob 数据的处理，如保存为文件等
-    例如，将 Blob 数据保存为视频文件 当前项目全程使用.webm视频格式 
-    视频名字进行处理 避免重复 因为是独立使用的
-    不可能出现同一时间录制多个视频，所以只需要使用时间戳就行了 */
-    const timestamp = new Date().getTime();
-    const randomStr = Math.random().toString(36).substr(2, 5);
-    const fileName = `/video_${timestamp}_${randomStr}.webm`;
-    filePath += fileName;
-    // 写入文件
-    fs.writeFileSync(filePath, Buffer.from(arg.arrayBuffer));
-    return filePath//返回给渲染器，返回的是一个promise
-  })
-}
-//存储文件时先判断当前路径是否存在文件夹，不存在先创建
-function mkdirsSync(dirname) {
-  // 判断目录是否存在
-  if (fs.existsSync(dirname)) {
-    // 如果目录已存在，直接返回 true，表示目录创建成功
-    return true;
-  } else {
-    // 如果目录不存在，递归创建上级目录
-    if (mkdirsSync(path.dirname(dirname))) {
-      // 上级目录创建成功后，创建当前目录
-      fs.mkdirSync(dirname);
-      // 返回 true，表示目录创建成功
-      return true;
-    }
+  }
+  // 注册 onDelToVideo 事件监听
+  private registerDelToVideo(): void {
+    ipcMain.handle('onDelToVideo', this.onDelToVideo.bind(this));
   }
 }

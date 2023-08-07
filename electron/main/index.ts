@@ -2,7 +2,7 @@ import { app, BrowserWindow, shell, ipcMain, contextBridge, ipcRenderer } from '
 import { release } from 'node:os'
 import { join } from 'node:path'
 import remote from '@electron/remote/main'
-import { handleWin, onDeviceVideo } from './hanlde'
+import { WindowManager } from './hanlde'
 
 //构建的目录结构
 // ├─┬ dist-electron
@@ -92,8 +92,7 @@ async function createWindow() {
 app.whenReady().then(() => {
   createWindow();
   //对窗口进行操作（放大缩小关闭）在此操作自定义属性
-  handleWin(win, app)
-  onDeviceVideo(win, app)
+  new WindowManager(win, app);
 })
 
 app.on('window-all-closed', () => {

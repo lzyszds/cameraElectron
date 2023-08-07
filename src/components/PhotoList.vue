@@ -1,13 +1,40 @@
 <script setup lang="ts">
 import { videoFileDataType } from "@/typing/_PhotoType";
 import { formatFileSize } from "@/utils/lzyutils";
+import { useStorage } from "@vueuse/core";
+import { ElNotification } from "element-plus";
+
 interface props {
   videoFileData: videoFileDataType[];
 }
 const props = defineProps<props>();
-console.log(`lzy  props:`, props);
 
 const tableNav = ["日期", "名称", "大小", "操作"];
+
+const delVideo = (path, index) => {
+  window.myElectron
+    .onDelToVideo(path)
+    .then((res: { message: string; type: "success" | "error" }) => {
+      ElNotification.closeAll();
+      if (res.type == "error") {
+        return ElNotification({
+          title: "删除失败",
+          message: res.message,
+          type: "error",
+          duration: 1000,
+        });
+      } else {
+        ElNotification({
+          title: "删除成功",
+          message: res.message,
+          type: "success",
+          duration: 1000,
+        });
+        const storage = useStorage("myVideolist", [] as videoFileDataType[]);
+        storage.value.splice(index, 1);
+      }
+    });
+};
 </script>
 
 <template>
@@ -24,7 +51,12 @@ const tableNav = ["日期", "名称", "大小", "操作"];
         <span>{{ item.createTime }}</span>
         <span>{{ item.fileName }}</span>
         <span>{{ formatFileSize(item.fileSize) }}</span>
-        <a class="text-black hover:text-[var(--themeColor)] cursor-pointer"> 删除 </a>
+        <a
+          @click="delVideo(item.filePath, index)"
+          class="text-black hover:text-[var(--themeColor)] cursor-pointer"
+        >
+          删除
+        </a>
       </div>
     </section>
   </main>
