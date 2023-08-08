@@ -100,7 +100,6 @@ const hasStartFlag = ref<boolean>(false);
 // 开始录制
 let interTimefn: any = null;
 const startRecording = () => {
-  console.log(`lzy  hasStartFlag:`, hasStartFlag)
   if (!mediaParas.mediaStream) return;
   if (!hasStartFlag.value) {
     mediaParas.mediaRecorder = new MediaRecorder(mediaParas.mediaStream);
@@ -127,7 +126,6 @@ const stopRecording = () => {
   if (mediaParas.mediaRecorder && hasStartFlag.value === true) {
     mediaParas.mediaRecorder.stop();
     hasStartFlag.value = false;
-    console.log(`lzy  mediaParas.chunks:`, mediaParas.chunks)
     const timestamp = new Date().getTime();
     const randomStr = Math.random().toString(36).substr(2, 5);
     videoFileData.fileName = `video_${timestamp}_${randomStr}.webm`;
@@ -147,7 +145,6 @@ const handleDataAvailable = (event: BlobEvent) => {
 };
 //保存视频/* isSaveAs 是否另存为 */
 function sendBlobToMainProcess(isSaveAs) {
-  console.log(`lzy  mediaParas.chunks.length:`, mediaParas.chunks)
   // 将 Blob 数据转换为 ArrayBuffer 或 Base64 字符串
   // 这里使用 ArrayBuffer 作为示例，你可以根据需要选择其他方式
   if (mediaParas.chunks.length > 0) {
@@ -167,7 +164,7 @@ function sendBlobToMainProcess(isSaveAs) {
     mediaParas.time = 0;
     mediaParas.chunks = []
     mediaParas.fileSize = 0;
-    
+
     ElNotification.closeAll();
     ElNotification({
       title: "保存失败",
@@ -244,7 +241,7 @@ onBeforeUnmount(() => {
       <!-- <video ref="video" autoplay></video> -->
       <video class="w-full h-[45%] object-contain" ref="videoElement" style="display: none" autoplay></video>
 
-      <div class="outcontent flex justify-between gap-5 px-4">
+      <div class="flex justify-between gap-5 px-4">
         <div class="flex">
           <button class="btn" @click="startRecording">
             <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
@@ -261,7 +258,7 @@ onBeforeUnmount(() => {
             保存视频
           </button>
           <button class="btn" @click="sendBlobToMainProcess(true)">
-            视频另存为
+            另存为
           </button>
           <div class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none">
             录制时长：{{ formatDuration(mediaParas.time) }}

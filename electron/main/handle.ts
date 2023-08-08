@@ -19,6 +19,8 @@ export class WindowManager {
     this.registerDelToVideo();
     // 打开文件夹
     this.registerOpenFolder();
+    //打开文件
+    this.registerOpenFile();
     // 复制文件进剪切板
     this.registerCopyFile()
   }
@@ -155,18 +157,36 @@ export class WindowManager {
 
   // 打开文件夹事件逻辑
   private async onOpenFolder(event: Electron.IpcMainInvokeEvent, arg: any) {
-    console.log(`lzy  arg:`, arg.split('/').slice(0, -1).join('/'))
     //判断文件夹是否存在
     if (fs.existsSync(arg)) {
       shell.showItemInFolder(arg);
     } else {
       dialog.showErrorBox('提示', '文件夹不存在');
-
     }
   }
   // 注册 onOpenFolder 事件监听
   private registerOpenFolder(): void {
     ipcMain.handle('onOpenFolder', this.onOpenFolder.bind(this));
+  }
+  //打开文件
+  private async onOpenFile(event: Electron.IpcMainInvokeEvent, arg: any) {
+    const filePath = arg.split('\\').slice(0, -1).join('\\');
+    console.log(`lzy  fs.existsSync(filePath):`, fs.existsSync(filePath))
+
+    //判断文件夹是否存在 
+    if (fs.existsSync(filePath)) {
+      //文件是否存在
+      if (!fs.existsSync(arg)) {
+        return dialog.showErrorBox('提示', '文件不存在');
+      }
+      shell.openPath(arg);
+    } else {
+      dialog.showErrorBox('提示', '文件夹不存在');
+    }
+  }
+  // 注册 onOpenFile 事件监听
+  private registerOpenFile(): void {
+    ipcMain.handle('onOpenFile', this.onOpenFile.bind(this));
   }
 
   // 复制文件进剪切板 // 未完成

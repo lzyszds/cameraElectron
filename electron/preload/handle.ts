@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld(
     onDelToVideo: (val) => ipcRenderer.invoke('onDelToVideo', val),
     //打开文件夹
     onOpenFolder: (val) => ipcRenderer.invoke('onOpenFolder', val),
+    //打开文件
+    onOpenFile: (val) => ipcRenderer.invoke('onOpenFile', val),
     //复制文件进剪切板
     onCopyFile: (val) => ipcRenderer.invoke('onCopyFile', val),
   }

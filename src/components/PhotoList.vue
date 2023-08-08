@@ -48,7 +48,9 @@ const copyFileName = (fileName) => {
     duration: 1000,
   });
 };
-
+const opFileVideo = (path) => {
+  window.myElectron.onOpenFile(path);
+};
 
 //监听storage
 watch(storage, (val) => {
@@ -75,7 +77,7 @@ function isReverhandle() {
 <template>
   <main
     class="relative w-full h-full grid grid-rows-[24px_1fr] pointer-events-auto rounded-lg font-[dindin] px-4 py-2 text-[0.8125rem] leading-5 shadow-xl shadow-black/5 ring-2 ring-[var(--themeColor)]">
-    <section class="grid grid-cols-[150px_1fr_120px_100px] border-[#000] border-solid border-b-2">
+    <section class="grid grid-cols-[150px_1fr_100px_110px] pr-[7px] border-[#000] border-solid border-b-2">
       <p v-for="(item, index) in tableNav" :key="index">
         {{ item }}
         <span v-if="index === 0" @click="sortDatalist">
@@ -85,18 +87,20 @@ function isReverhandle() {
       </p>
     </section>
     <section class="l-scroll-listView overflow-hidden overflow-y-scroll">
-      <div class="grid grid-cols-[150px_1fr_120px_100px] h-8 text-base items-center"
+      <div class="grid grid-cols-[150px_1fr_100px_110px] h-8 text-base items-center"
         v-for="(item, index) in videoFileDataList" :key="index">
         <span>{{ item.createTime }}</span>
         <span class="select-all" @dblclick="copyFileName(item.fileName)">{{ item.fileName }}</span>
         <span>{{ formatFileSize(item.fileSize) }}</span>
         <div class="flex gap-1 text-sm">
+          <LzyIcon :tipPosition="index === 0 ? 'bottom' : 'top'" @click="opFileVideo(item.filePath)" tip="打开视频"
+            name="mdi-light:eye"></LzyIcon>
           <LzyIcon :tipPosition="index === 0 ? 'bottom' : 'top'" @click="delVideo(item.filePath, index)" tip="删除"
             name="mdi-light:delete"></LzyIcon>
           <LzyIcon :tipPosition="index === 0 ? 'bottom' : 'top'" @click="openFolder(item.filePath)" tip="打开文件夹"
             name="mdi-light:folder-multiple"></LzyIcon>
           <LzyIcon :tipPosition="index === 0 ? 'bottom' : 'top'" @click="onCopyFile(item.filePath)" tip="复制到剪切板"
-            name="mdi-light:clipboard-text"></LzyIcon>
+            name="mdi-light:clipboard"></LzyIcon>
         </div>
       </div>
     </section>

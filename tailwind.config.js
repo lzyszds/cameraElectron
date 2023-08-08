@@ -17,7 +17,6 @@ module.exports = {
           fontWeight: "600",
           backgroundColor: "var(--themeColor)",
           color: "var(--reverColor)",
-          transition: "background-color .1375s",
           border: "1px solid var(--themeColor)",
           boxShadow: "1px 0px 1px 1px var(--themeColor_2)",
           cursor: "pointer",
