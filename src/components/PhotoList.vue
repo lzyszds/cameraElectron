@@ -2,56 +2,101 @@
 import { videoFileDataType } from "@/typing/_PhotoType";
 import { formatFileSize } from "@/utils/lzyutils";
 import { useStorage } from "@vueuse/core";
-import { ElNotification } from "element-plus";
+import { ElMessage } from 'element-plus'
+import { ref, watch } from "vue";
+import dayjs from 'dayjs'
 
-interface props {
-  videoFileData: videoFileDataType[];
-}
-const props = defineProps<props>();
 
 const tableNav = ["日期", "名称", "大小", "操作"];
+const storage = useStorage("myVideolist", [] as videoFileDataType[]);
+
 
 const delVideo = (path, index) => {
   window.myElectron
     .onDelToVideo(path)
     .then((res: { message: string; type: "success" | "error" }) => {
-      ElNotification.closeAll();
+      ElMessage.closeAll();
       if (res.type == "error") {
-        return ElNotification({
-          title: "删除失败",
+        ElMessage({
           message: res.message,
-          type: "error",
+          type: 'error',
           duration: 1000,
-        });
+        })
       } else {
-        ElNotification({
-          title: "删除成功",
-          message: res.message,
+        ElMessage({
+          message: "删除成功",
           type: "success",
           duration: 1000,
         });
-        const storage = useStorage("myVideolist", [] as videoFileDataType[]);
-        storage.value.splice(index, 1);
+        videoFileDataList.value = isReverhandle()
       }
+      storage.value.splice(index, 1);
     });
 };
+
+const openFolder = (path) => {
+  window.myElectron.onOpenFolder(path);
+};
+const onCopyFile = (path) => {
+  window.myElectron.onCopyFile(path);
+}
+const copyFileName = (fileName) => {
+  navigator.clipboard.writeText(fileName);
+  ElMessage({
+    message: "复制成功",
+    type: "success",
+    duration: 1000,
+  });
+};
+
+
+//监听storage
+watch(storage, (val) => {
+  videoFileDataList.value = val
+})
+
+const isRever = ref(false);
+//时间排序功能
+const videoFileDataList = ref(storage.value);
+const sortDatalist = () => {
+  isRever.value = !isRever.value;
+  videoFileDataList.value = isReverhandle()
+};
+//处理是否排序的数据
+function isReverhandle() {
+  return storage.value.sort((a, b) => {
+    const createTimeA = dayjs(a.createTime).unix()
+    const createTimeB = dayjs(b.createTime).unix()
+    return isRever.value ? createTimeA - createTimeB : createTimeB - createTimeA;
+  });
+}
 </script>
 
 <template>
   <main
-    class="relative w-full h-full grid grid-rows-[45px_1fr] pointer-events-auto rounded-lg font-[dindin]  p-4 text-[0.8125rem] leading-5 shadow-xl shadow-black/5  ring-2 ring-[var(--themeColor)]">
-    <section class="grid grid-cols-[150px_1fr_120px_100px]">
-      <span v-for="(item, index) in tableNav" :key="index">{{ item }}</span>
+    class="relative w-full h-full grid grid-rows-[24px_1fr] pointer-events-auto rounded-lg font-[dindin] px-4 py-2 text-[0.8125rem] leading-5 shadow-xl shadow-black/5 ring-2 ring-[var(--themeColor)]">
+    <section class="grid grid-cols-[150px_1fr_120px_100px] border-[#000] border-solid border-b-2">
+      <p v-for="(item, index) in tableNav" :key="index">
+        {{ item }}
+        <span v-if="index === 0" @click="sortDatalist">
+          <LzyIcon width="15px" height="15px" :name="isRever ? 'mdi:sort-ascending' : 'mdi:sort-descending'">
+          </LzyIcon>
+        </span>
+      </p>
     </section>
-    <section class="overflow-hidden overflow-y-scroll">
-      <div class="grid grid-cols-[150px_1fr_120px_100px] h-8 text-base" v-for="(item, index) in props.videoFileData"
-        :key="index">
+    <section class="l-scroll-listView overflow-hidden overflow-y-scroll">
+      <div class="grid grid-cols-[150px_1fr_120px_100px] h-8 text-base items-center"
+        v-for="(item, index) in videoFileDataList" :key="index">
         <span>{{ item.createTime }}</span>
-        <span>{{ item.fileName }}</span>
+        <span class="select-all" @dblclick="copyFileName(item.fileName)">{{ item.fileName }}</span>
         <span>{{ formatFileSize(item.fileSize) }}</span>
         <div class="flex gap-1 text-sm">
-          <a @click="delVideo(item.filePath, index)" class="btn p-[3px] h-6 leading-4"> 删除 </a>
-          <a @click="delVideo(item.filePath, index)" class="btn p-[3px] h-6 leading-4"> 打开 </a>
+          <LzyIcon :tipPosition="index === 0 ? 'bottom' : 'top'" @click="delVideo(item.filePath, index)" tip="删除"
+            name="mdi-light:delete"></LzyIcon>
+          <LzyIcon :tipPosition="index === 0 ? 'bottom' : 'top'" @click="openFolder(item.filePath)" tip="打开文件夹"
+            name="mdi-light:folder-multiple"></LzyIcon>
+          <LzyIcon :tipPosition="index === 0 ? 'bottom' : 'top'" @click="onCopyFile(item.filePath)" tip="复制到剪切板"
+            name="mdi-light:clipboard-text"></LzyIcon>
         </div>
       </div>
     </section>

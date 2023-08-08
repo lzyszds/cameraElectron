@@ -1,4 +1,4 @@
-import { ipcMain, dialog, nativeTheme, } from 'electron';
+import { ipcMain, dialog, nativeTheme, shell, clipboard, nativeImage } from 'electron';
 import type { BrowserWindow, App } from 'electron';
 import fs from 'fs';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
@@ -10,9 +10,17 @@ export class WindowManager {
   constructor(win: BrowserWindow, app: App) {
     this.win = win;
     this.app = app;
+    // 注册事件监听
+    // 窗口操作
     this.registerHandleWin();
+    // 储存录制视频
     this.registerDeviceVideo();
+    // 删除指定视频
     this.registerDelToVideo();
+    // 打开文件夹
+    this.registerOpenFolder();
+    // 复制文件进剪切板
+    this.registerCopyFile()
   }
 
   // 处理窗口操作请求
@@ -82,7 +90,7 @@ export class WindowManager {
     nativeTheme.themeSource = nativeTheme.shouldUseDarkColors ? 'light' : 'dark';
   }
 
-  // 处理 saveDeviceVideo 请求
+  // 保存视频逻辑
   private saveDeviceVideo(event: Electron.IpcMainInvokeEvent, arg: any): Promise<string> {
     return new Promise((resolve, reject) => {
       try {
@@ -93,14 +101,15 @@ export class WindowManager {
             title: '选择视频保存路径',
             properties: ['openDirectory'],
           })[0];
-        } else if (!arg.isSave && mkdirsSync(`${this.app.getPath('documents')}/ytjs`)) {
-          filePath = `${this.app.getPath('documents')}/ytjs`;
+        } else if (!arg.isSave && mkdirsSync(`${this.app.getPath('documents')}\\ytjs`)) {
+          filePath = `${this.app.getPath('documents')}\\ytjs`;
         }
 
         const timestamp = new Date().getTime();
         const randomStr = Math.random().toString(36).substr(2, 5);
-        const fileName = `/video_${timestamp}_${randomStr}.webm`;
+        const fileName = `\\video_${timestamp}_${randomStr}.webm`;
         filePath += fileName;
+        console.log(`lzy  filePath:`, filePath)
 
         fs.writeFileSync(filePath, Buffer.from(arg.arrayBuffer));
         resolve(filePath)
@@ -117,7 +126,6 @@ export class WindowManager {
   // 删除指定视频
   private async onDelToVideo(event: Electron.IpcMainInvokeEvent, arg: any)
     : Promise<{ type: 'success' | 'error', message: string, }> {
-    console.log(`lzy  arg:`, arg)
     try {
       fs.unlinkSync(arg);
       return {
@@ -139,8 +147,53 @@ export class WindowManager {
       return { type: 'error', message };
     }
   }
+
   // 注册 onDelToVideo 事件监听
   private registerDelToVideo(): void {
     ipcMain.handle('onDelToVideo', this.onDelToVideo.bind(this));
   }
+
+  // 打开文件夹事件逻辑
+  private async onOpenFolder(event: Electron.IpcMainInvokeEvent, arg: any) {
+    console.log(`lzy  arg:`, arg.split('/').slice(0, -1).join('/'))
+    //判断文件夹是否存在
+    if (fs.existsSync(arg)) {
+      shell.showItemInFolder(arg);
+    } else {
+      dialog.showErrorBox('提示', '文件夹不存在');
+
+    }
+  }
+  // 注册 onOpenFolder 事件监听
+  private registerOpenFolder(): void {
+    ipcMain.handle('onOpenFolder', this.onOpenFolder.bind(this));
+  }
+
+  // 复制文件进剪切板 // 未完成
+  private onCopyFile(event: Electron.IpcMainInvokeEvent, arg: any) {
+    const filePath = arg;
+
+    //判断文件夹是否存在
+    if (fs.existsSync(filePath)) {
+      // 读取文件内容
+      // 读取视频文件的内容
+      fs.readFile(filePath, 'base64', (err: any, data) => {
+        if (err) {
+          console.error('无法读取视频文件:', err);
+          return;
+        }
+        // 将 Buffer 编码的视频数据写入剪贴板
+        clipboard.writeImage(nativeImage.createFromDataURL(`${data}`));
+
+        console.log('视频数据已复制到剪贴板');
+      });
+    } else {
+      dialog.showErrorBox('提示', '文件不存在');
+    }
+  }
+  // 注册 onCopyFile 事件监听
+  private registerCopyFile(): void {
+    ipcMain.handle('onCopyFile', this.onCopyFile.bind(this));
+  }
+
 }

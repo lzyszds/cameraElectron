@@ -13,6 +13,56 @@ export const siderbar: Siderbar[] = [
     name: "ratio",
     icon: "solar:crop-broken",
   },
+  {
+    title: "滤镜",
+    name: "filters",
+    icon: "solar:filters-broken",
+  },
+  {
+    title: "文字",
+    name: "text",
+    icon: "mdi:format-text",
+  },
+  {
+    title: "贴纸",
+    name: "sticker",
+    icon: "mdi:sticker-emoji",
+  },
+  {
+    title: "裁剪",
+    name: "crop",
+    icon: "mdi:crop",
+  },
+  {
+    title: "旋转",
+    name: "rotate",
+    icon: "mdi:rotate-3d",
+  },
+  {
+    name: "模糊",
+    title: "blur",
+    icon: "mdi:blur",
+  },
+  {
+    title: "美颜",
+    name: "beauty",
+    icon: "mdi:face",
+  },
+  {
+    title: "画框",
+    name: "frame",
+    icon: "mdi:picture-in-picture-bottom-right",
+  },
+  {
+    title: "马赛克",
+    name: "mosaic",
+    icon: "mdi:blur-linear",
+  },
+  {
+    title: "涂鸦",
+    name: "graffiti",
+    icon: "mdi:brush",
+  },
 ];
 
 

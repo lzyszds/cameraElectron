@@ -37,13 +37,20 @@ const componentsItems = {
 <style lang="scss">
 .actionItemCard {
   border-radius: 8px;
-  border: 1px solid var(--themeColor);
-  padding: 8px;
+  padding: 20px;
   margin-bottom: 8px;
   user-select: none;
+  position: relative;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
 
   h3 {
     margin: 0 0 10px 0;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .actionItemCard {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 4px rgba(255, 255, 255, 0.1);
   }
 }
 </style>

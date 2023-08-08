@@ -2,7 +2,7 @@ import { app, BrowserWindow, shell, ipcMain, contextBridge, ipcRenderer } from '
 import { release } from 'node:os'
 import { join } from 'node:path'
 import remote from '@electron/remote/main'
-import { WindowManager } from './hanlde'
+import { WindowManager } from './handle'
 
 //构建的目录结构
 // ├─┬ dist-electron

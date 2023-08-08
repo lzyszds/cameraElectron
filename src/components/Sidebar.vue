@@ -11,7 +11,7 @@ const changeTools = (val) => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 mb-[200px]">
+  <div class="flex flex-col gap-4 mb-[200px] mt-8">
     <div
       v-for="item in siderbar"
       :key="item.name"

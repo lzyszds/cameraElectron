@@ -163,6 +163,25 @@ export function LNotification(val: string, time = 2000, postion: any = 'bottom-r
   });
 }
 
+/** 
+  * window.Notification
+  * options：一个包含其他通知参数的对象，可以用来设置通知的其他属性，如下面的参数：
+  * body (正文)：通知的主要内容或消息体，通常显示在标题下面。
+  * icon (图标)：通知显示的图标，可以是一个 URL 或者一个图片的相对路径。
+  * badge (徽章)：通知的小图标，通常用于在桌面图标或任务栏上显示。
+  * tag (标签)：通知的标签，用于将相同标签的通知归为一组，如果多次触发同样标签的通知，则只显示最后一条。
+  * image (图片)：一个附加的图片，通常会显示在通知的主体内容之前。
+  * vibrate (振动)：控制通知到达时设备是否振动，可以是一个持续时间的数组或布尔值。
+  * renotify (再通知)：如果设置为 true，即使之前的通知已经被关闭，相同的通知标签也会再次触发通知。
+  * requireInteraction (需要交互)：如果设置为 true，通知将保持可见，直到用户与之交互为止。
+  * silent (静音)：如果设置为 true，通知将不会发出声音。
+  * timestamp (时间戳)：通知的时间戳，用于显示通知发送的时间。
+  * data (数据)：一个包含任意附加数据的对象，可以在通知的事件处理程序中使用。
+*/
+export function windowTipiver(option) {
+  return new window.Notification(option.title, option)
+}
+
 // 复制内容提示版权信息
 import { useEventListener } from "@vueuse/core";
 
@@ -283,6 +302,8 @@ export function hslToRgb([h, s, l]: number[]): number[] {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
+
+
 export default {
   splitArray,
   timeAgo,
@@ -299,5 +320,6 @@ export default {
   unique,
   setTime,
   rgbToHsl,
-  hslToRgb
+  hslToRgb,
+  windowTipiver
 };

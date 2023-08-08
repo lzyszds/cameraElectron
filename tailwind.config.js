@@ -21,19 +21,20 @@ module.exports = {
           border: "1px solid var(--themeColor)",
           boxShadow: "1px 0px 1px 1px var(--themeColor_2)",
           cursor: "pointer",
+          fontSize: ".8rem",
+          lineHeight: "1.4rem",
           display: "flex",
           "&:hover": {
             backgroundColor: "var(--hoverColor)",
             color: "var(--reverColor)",
           },
         },
-        ".darg": {
+        ".drag": {
           "-webkit-app-region": "drag",
-          pointerEvents: "none",
         },
         ".no-drag": {
           "-webkit-app-region": "no-drag",
-        }
+        },
       });
     }),
   ],

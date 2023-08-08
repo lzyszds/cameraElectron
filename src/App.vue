@@ -27,7 +27,7 @@ setInterval(() => {
   <Suspense><NavTop @changeValue="changeitem"></NavTop></Suspense>
   <!-- <Popup></Popup> -->
   <Suspense><component :is="components[changeValue!]"></component></Suspense>
-  <p class="absolute bottom-0">
+  <p class="absolute bottom-0 left-3">
     内存占用：{{ formatFileSize(heapUsed) }} 总内存：{{ formatFileSize(heapTotal) }}
   </p>
 </template>

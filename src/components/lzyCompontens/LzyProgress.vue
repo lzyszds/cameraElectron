@@ -59,15 +59,8 @@ const style = computed(() => {
 <template>
   <label class="lzy_slider">
     <span>{{ name }}</span>
-    <input
-      @input="handlePace"
-      :style="style"
-      v-model="pace"
-      :min="props.min"
-      :max="props.max"
-      type="range"
-      class="lzy_level"
-    />
+    <input @input="handlePace" :style="style" v-model="pace" :min="props.min" :max="props.max" type="range"
+      class="lzy_level" />
     <input type="number" :min="props.min" :max="props.max" v-model="pace" />
   </label>
 </template>
@@ -79,10 +72,12 @@ const style = computed(() => {
   align-items: center;
   user-select: none;
   position: relative;
+
   input {
     margin: 0;
     padding: 0 5px;
   }
+
   span {
     position: absolute;
     left: 5px;
@@ -95,9 +90,10 @@ const style = computed(() => {
     /* 透过元素 */
     pointer-events: none;
   }
+
   .lzy_level {
     appearance: none;
-    width: 200px;
+    width: 180px;
     height: 30px;
     background: var(--progressBackground);
     overflow: hidden;
@@ -105,13 +101,20 @@ const style = computed(() => {
     transition: height 0.1s;
     cursor: inherit;
     position: relative;
+
     &::-webkit-slider-thumb {
-      -webkit-appearance: none; /* 去掉默认滑块样式 */
-      width: 0px; /* 滑块的宽度 */
-      height: 20px; /* 滑块的高度 */
-      background-color: #fff; /* 滑块的颜色 */
-      cursor: pointer; /* 鼠标悬停时显示手型光标 */
-      box-shadow: 1px 0px 0px 1px #fff; /* 滑块阴影 */
+      -webkit-appearance: none;
+      /* 去掉默认滑块样式 */
+      width: 0px;
+      /* 滑块的宽度 */
+      height: 20px;
+      /* 滑块的高度 */
+      background-color: #fff;
+      /* 滑块的颜色 */
+      cursor: pointer;
+      /* 鼠标悬停时显示手型光标 */
+      box-shadow: 1px 0px 0px 1px #fff;
+      /* 滑块阴影 */
       padding-left: 3px;
     }
   }
@@ -126,6 +129,7 @@ const style = computed(() => {
     text-align: center;
     font-size: 12px;
     margin-left: 5px;
+
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
       display: none;

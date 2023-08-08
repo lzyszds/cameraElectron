@@ -49,7 +49,7 @@ const close = () => {
 
 <template>
   <!-- 顶部导航栏 -->
-  <nav class="navbar font-size-20 flex justify-between w-full font-[alimama] select-none">
+  <nav class="navbar drag font-size-20 flex justify-between w-full font-[alimama] select-none">
     <div class="flex p-[0.3em] items-center gap-1 no-drag">
       <img src="/public/favicon.ico" width="24" height="24" class="rounded-full" />
       <span class="text-base text-shadow">影天技术</span>

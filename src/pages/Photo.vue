@@ -5,7 +5,7 @@ import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue
 import type { Ref } from "vue";
 import { useEventListener, useStorage } from "@vueuse/core";
 
-import { ElNotification, ElButton } from "element-plus";
+import { ElNotification } from "element-plus";
 import { useStore } from "@/store/store";
 import { formatDuration } from "@/utils/lzyutils";
 
@@ -100,20 +100,20 @@ const hasStartFlag = ref<boolean>(false);
 // 开始录制
 let interTimefn: any = null;
 const startRecording = () => {
+  console.log(`lzy  hasStartFlag:`, hasStartFlag)
   if (!mediaParas.mediaStream) return;
   if (!hasStartFlag.value) {
     mediaParas.mediaRecorder = new MediaRecorder(mediaParas.mediaStream);
     mediaParas.mediaRecorder.ondataavailable = handleDataAvailable;
     mediaParas.mediaRecorder.start();
     hasStartFlag.value = true;
-    console.log("开始录制");
     interTimefn = setInterval(() => {
       mediaParas.time++;
     }, 1000);
   } else {
+    stopRecording();
     clearInterval(interTimefn);
     mediaParas.time = 0;
-    stopRecording();
   }
 };
 const videoFileData = reactive<videoFileDataType>({
@@ -127,11 +127,11 @@ const stopRecording = () => {
   if (mediaParas.mediaRecorder && hasStartFlag.value === true) {
     mediaParas.mediaRecorder.stop();
     hasStartFlag.value = false;
+    console.log(`lzy  mediaParas.chunks:`, mediaParas.chunks)
     const timestamp = new Date().getTime();
     const randomStr = Math.random().toString(36).substr(2, 5);
     videoFileData.fileName = `video_${timestamp}_${randomStr}.webm`;
     videoFileData.createTime = new Date().toLocaleString();
-    console.log("停止录制", videoFileData, mediaParas.fileSize);
   }
 };
 
@@ -147,6 +147,7 @@ const handleDataAvailable = (event: BlobEvent) => {
 };
 //保存视频/* isSaveAs 是否另存为 */
 function sendBlobToMainProcess(isSaveAs) {
+  console.log(`lzy  mediaParas.chunks.length:`, mediaParas.chunks)
   // 将 Blob 数据转换为 ArrayBuffer 或 Base64 字符串
   // 这里使用 ArrayBuffer 作为示例，你可以根据需要选择其他方式
   if (mediaParas.chunks.length > 0) {
@@ -156,7 +157,6 @@ function sendBlobToMainProcess(isSaveAs) {
       const arrayBuffer = reader.result;
       // 发送 Blob 数据给主进程
       window.myElectron.saveDeviceVideo({ arrayBuffer, isSaveAs }).then((res) => {
-        console.log(`lzy  res:`, res);
         if (res === "Error") return;
         saveSuccess(res); //保存成功后
       });
@@ -164,22 +164,21 @@ function sendBlobToMainProcess(isSaveAs) {
     //先转成ArrayBuffer 读取完成后再转成ArrayBuffer 先走完这个再走onload
     reader.readAsArrayBuffer(blobData);
   } else {
+    mediaParas.time = 0;
+    mediaParas.chunks = []
+    mediaParas.fileSize = 0;
+    
     ElNotification.closeAll();
     ElNotification({
       title: "保存失败",
-      message: "请先录制视频",
+      message: "请先录制视频(或者录制的时间太短)",
       type: "error",
       duration: 1000,
     });
   }
 }
-// const getStorage = ref<videoFileDataType[]>([]);
-// const myVideolist = localStorage.getItem("myVideolist");
-// if (myVideolist) {
-//   getStorage.value = JSON.parse(myVideolist) as [];
-// }
+//视频列表 从本地存储中获取
 const storage = useStorage("myVideolist", [] as videoFileDataType[]);
-const getStorage = computed(() => storage.value);
 //保存成功后
 function saveSuccess(res) {
   ElNotification.closeAll();
@@ -196,8 +195,7 @@ function saveSuccess(res) {
     fileSize: mediaParas.fileSize,
     filePath: res,
   };
-  getStorage.value.push(data);
-  storage.value = getStorage.value;
+  storage.value.push(data)
   //视频保存成功后清空数据
   mediaParas.chunks = [];
   Object.keys(videoFileData).forEach((key) => {
@@ -240,7 +238,7 @@ onBeforeUnmount(() => {
     <!-- 操作栏 -->
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
-    <div class="h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[1fr_35px_minmax(200px,1fr)] gap-3">
+    <div class="h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
       <canvas class="border-double border-2 m-auto" ref="canvasElement" :width="canvasWidth" :height="canvasHeight"
         :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"></canvas>
       <!-- <video ref="video" autoplay></video> -->
@@ -248,29 +246,29 @@ onBeforeUnmount(() => {
 
       <div class="outcontent flex justify-between gap-5 px-4">
         <div class="flex">
-          <ElButton class="btn" @click="startRecording">
+          <button class="btn" @click="startRecording">
             <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
               <LzyIcon name="mdi:stopwatch-start-outline"></LzyIcon>开始录制
             </span>
             <span class="flex place-content-center place-items-center" v-else>
               <LzyIcon name="ph:stop-circle" style="color: red"></LzyIcon>结束录制
             </span>
-          </ElButton>
+          </button>
           <a class="ml-5 underline leading-8">{{ videoFileData.fileName }}</a>
         </div>
         <div class="flex gap-1">
-          <ElButton class="btn" @click="sendBlobToMainProcess(false)">
+          <button class="btn" @click="sendBlobToMainProcess(false)">
             保存视频
-          </ElButton>
-          <ElButton class="btn" @click="sendBlobToMainProcess(true)">
+          </button>
+          <button class="btn" @click="sendBlobToMainProcess(true)">
             视频另存为
-          </ElButton>
+          </button>
           <div class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none">
             录制时长：{{ formatDuration(mediaParas.time) }}
           </div>
         </div>
       </div>
-      <PhotoList :videoFileData="getStorage!"></PhotoList>
+      <PhotoList></PhotoList>
     </div>
   </div>
 </template>
