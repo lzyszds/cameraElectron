@@ -4,23 +4,34 @@
 onmessage = (event) => {
   const imageData = event.data.imageData;
   const data = imageData.data;
+  // event.data.params.hue = event.data.params.hue / 360;
   const params = event.data.params;
 
   // 处理图像数据，这里使用你之前定义的 change_per_pix 函数
   for (let i = 0; i < data.length; i += 4) {
     change_per_pix(params, data, i);
+    //黑白滤镜
+    // const r = data[i] >= 80 && data[i] <= 200 ? 0 : 255;
+    // data[i] = r;
+    // data[i + 1] = r;
+    // data[i + 2] = r;
   }
   // 处理对比度
   if (params.contrast && params.contrast != 0) {
     const avg = getGrayAverage(data);
     makeContrast(data, avg, params.contrast * 255);
+    // applyCartoonFilter(data, params);
   }
   // 返回处理后的图像数据
   postMessage(imageData);
 };
 
-
-
+/**
+ *  更直观的颜色描述： HSL代表色相（Hue）、饱和度（Saturation）和亮度（Lightness）
+ * 这使得颜色的描述更加直观
+ * 与RGB相比，HSL更接近人类对颜色的感知
+ * 使得调整颜色变得更加直观和易于理解
+ */
 function change_per_pix(param, dataArray, offset) {
   // 从 RGB 转换为 HLS
   const r = dataArray[offset];
@@ -28,12 +39,7 @@ function change_per_pix(param, dataArray, offset) {
   const b = dataArray[offset + 2];
   const from = [r, g, b];
 
-  if (
-    param.hue === 0 &&
-    param.saturation === 0 &&
-    param.brightness === 0 &&
-    param.contrast === 0
-  ) {
+  if (param.hue === 0 && param.saturation === 0 && param.brightness === 0) {
     return;
   }
 
@@ -42,18 +48,18 @@ function change_per_pix(param, dataArray, offset) {
   // 处理色度
   if (param.hue && param.hue !== 0) {
     // 色度的区间 [-0.5, 0.5]
-    const delta = param.hue * 360;
+    const delta = param.hue * 200;
     let hue = hsl[0] + delta;
-    hue = Math.max(0, Math.min(360, hue));
+    hue = Math.max(0, Math.min(200, hue));
     hsl[0] = hue;
   }
 
   // 处理饱和度
   if (param.saturation && param.saturation !== 0) {
     // 饱和度的区间 [-0.5, 0.5]
-    const delta = param.saturation * 100;
+    const delta = param.saturation * 40;
     let saturation = hsl[1] + delta;
-    saturation = Math.max(0, Math.min(100, saturation));
+    saturation = Math.max(0, Math.min(40, saturation));
     hsl[1] = saturation;
   }
 
@@ -72,6 +78,33 @@ function change_per_pix(param, dataArray, offset) {
   dataArray[offset + 1] = newColor[1];
   dataArray[offset + 2] = newColor[2];
 }
+
+//卡通滤镜
+function applyCartoonFilter(dataArray, params) {
+  const avg = getGrayAverage(dataArray);
+
+  if (params.contrast && params.contrast != 0) {
+    makeContrast(dataArray, avg, params.contrast * 255);
+  }
+
+  for (let i = 0; i < dataArray.length; i += 4) {
+    const r = dataArray[i];
+    const g = dataArray[i + 1];
+    const b = dataArray[i + 2];
+
+    const grayValue = 0.299 * r + 0.587 * g + 0.114 * b;
+
+    const newR = grayValue + (r - grayValue) * 0.5;
+    const newG = grayValue + (g - grayValue) * 0.5;
+    const newB = grayValue + (b - grayValue) * 0.5;
+
+    dataArray[i] = newR;
+    dataArray[i + 1] = newG;
+    dataArray[i + 2] = newB;
+  }
+}
+
+//其余代码保持不变，包括getGrayAverage和makeContrast函数
 
 // 获取灰度平均值
 function getGrayAverage(imagePixArray) {
@@ -93,32 +126,34 @@ function getGrayAverage(imagePixArray) {
 
 // 对每个像素点 调节 对比度
 function makeContrast(dataArray, average, contrast) {
-  let pixCount = dataArray.length / 4;
+  const pixCount = dataArray.length / 4;
+
   for (let i = 0; i < pixCount; i++) {
     const pixOffset = i * 4;
     let r = dataArray[pixOffset];
     let g = dataArray[pixOffset + 1];
     let b = dataArray[pixOffset + 2];
+
     let newR = r + ((r - average) * contrast) / 255;
     let newG = g + ((g - average) * contrast) / 255;
     let newB = b + ((b - average) * contrast) / 255;
+
     if (newR < 0) {
       newR = 0;
-    }
-    if (newR > 255) {
+    } else if (newR > 255) {
       newR = 255;
     }
+
     if (newG < 0) {
       newG = 0;
-    }
-    if (newG > 255) {
+    } else if (newG > 255) {
       newG = 255;
     }
+
     if (newB < 0) {
       newB = 0;
-    }
-    if (newB > 255) {
-      newR = 255;
+    } else if (newB > 255) {
+      newB = 255;
     }
 
     dataArray[pixOffset] = newR;
