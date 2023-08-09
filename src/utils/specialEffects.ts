@@ -10,9 +10,20 @@
  */
 
 export default {
+  utils: {
+    // 判定人物是否张嘴
+    isMouthOpen: function (getParas) {
+      const mouth = getParas.getMouth(); // 获取嘴巴区域的关键点信息
+      const mouthHeight = (mouth[13].y + mouth[14].y) / 2 - (mouth[18].y + mouth[19].y) / 2;
+      console.log(`lzy  mouthHeight:`, mouthHeight)
 
-
-
+      // 判断嘴巴是否张开
+      const openThreshold = -20; // 定义判断为张嘴的阈值
+      const isMouthOpen = mouthHeight < openThreshold;
+      // 判断嘴巴是否张开
+      return isMouthOpen;
+    }
+  },
 
   hashiqi: function (ctx, getParas) {
     const hashiqi = new Image();
@@ -72,7 +83,6 @@ export default {
     );
   },
   cat: function (ctx, getParas) {
-    console.log(`lzy  getParas:`, getParas)
     const getLeftEye = getParas.getLeftEye();
     const nost = getParas.getNose()
     const height = getParas.getNose()[Math.floor((nost.length - 1) / 3)].y
@@ -97,6 +107,42 @@ export default {
       20 * mulitple,
       25 * mulitple
     )
+  },
+  //闪电特效
+  lightning: function (canv, ctx, getParas) {
+    var canvWidth = canv.width;
+    var canvHeight = canv.height;
+    var x = (getParas.getMouth()[4].x + getParas.getMouth()[8].x) / 2;
+    var y = (getParas.getMouth()[4].y + getParas.getMouth()[8].y) / 2;
+    var light = function () {
+      var r = 0;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      r = Math.floor(Math.random() * 5) * canvWidth / 50;
+      if (r <= 30) {
+        x += r;
+      } else {
+        x -= r;
+      }
+      y += Math.floor(Math.random() * 5) * canvHeight / 70;
+      ctx.lineTo(x, y);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "rgba(255, 255, 0, 1)"
+      ctx.stroke();
+      ctx.closePath();
+      requestAnimationFrame(light);
+    };
+    light()
+  },
+  theForeheadFont: function (ctx, getParas) {
+    ctx.font = "30px dindin";
+    ctx.fillStyle = "#fff";
+    // 绘制文本，应用阴影
+    // ctx.shadowColor = "#000"; // 阴影颜色
+    // ctx.shadowOffsetX = 2; // 阴影在 x 轴上的偏移
+    // ctx.shadowOffsetY = 2; // 阴影在 y 轴上的偏移
+    // ctx.shadowBlur = 10; // 阴影的模糊程度
+    ctx.fillText("我叫徐志伟", getParas.positions[0].x + 40, getParas.positions[0].y - 100);
   }
 
 }

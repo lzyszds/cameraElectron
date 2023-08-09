@@ -18,7 +18,6 @@ import {
   TinyFaceDetectorOptions,
   detectAllFaces,
   draw,
-  createCanvasFromMedia,
   resizeResults,
 } from "face-api.js";
 
@@ -40,6 +39,7 @@ const videoElement: Ref<HTMLVideoElement | null> = ref(null);
 const canvasElement: Ref<HTMLCanvasElement | null> = ref(null);
 //人脸轮廓元素引用
 const canvasFaceContour = ref<HTMLCanvasElement | null>(null);
+
 
 // 初始化摄像头
 const initCamera = async () => {
@@ -65,22 +65,18 @@ const initCamera = async () => {
           const resizedDetections = await applyDetectFaces(faceContour, ctx);
           if (!resizedDetections[0]) return
           const landmarks = resizedDetections[0].landmarks
-          ctx.font = "30px dindin";
-          ctx.fillStyle = "#fff";
-          // 绘制文本，应用阴影
-          // ctx.shadowColor = "#000"; // 阴影颜色
-          // ctx.shadowOffsetX = 2; // 阴影在 x 轴上的偏移
-          // ctx.shadowOffsetY = 2; // 阴影在 y 轴上的偏移
-          // ctx.shadowBlur = 10; // 阴影的模糊程度
-          ctx.fillText("我叫徐志伟", landmarks.positions[0].x + 40, landmarks.positions[0].y - 100);
-          // 恢复绘图上下文的状态，去除阴影
-          // ctx.restore();
+          specialEffects.theForeheadFont(ctx, landmarks)
           //哈士奇狗头特效
           // specialEffects.hashiqi(ctx, landmarks)
           //愤怒特效
           // specialEffects.angry(ctx, landmarks) 
           //猫须特效
           specialEffects.cat(ctx, landmarks)
+          //张嘴时放出闪电特效
+          // if (specialEffects.utils.isMouthOpen(landmarks)) {
+          //   specialEffects.lightning(canvasFaceContour.value, ctx, landmarks)
+          //   ctx.clearRect(0, 0, faceContour.width, faceContour.height);
+          // }
 
           //在边框
           // draw.drawDetections(faceContour, resizedDetections);
@@ -88,6 +84,7 @@ const initCamera = async () => {
           // draw.drawFaceLandmarks(faceContour, resizedDetections);
           //表情识别
           // draw.drawFaceExpressions(faceContour, resizedDetections);
+          //岁数和性别
         }, 0);
 
       } catch (error) {
@@ -97,12 +94,17 @@ const initCamera = async () => {
 
     // 加载模型的函数
     const loadMods = async () => {
+      // 加载所有需要的模型
       return Promise.all([
         nets.tinyFaceDetector.loadFromUri("/models"),
         nets.faceLandmark68Net.loadFromUri("/models"),
         nets.faceRecognitionNet.loadFromUri("/models"),
         nets.faceExpressionNet.loadFromUri("/models"),
-      ]);
+        // 加载其他模型
+        nets.mtcnn.loadFromUri("/models"),
+        nets.ageGenderNet.loadFromUri("/models"),
+      ])
+
     };
   } catch (error) {
     console.error("访问摄像头时出错：", error);
@@ -167,7 +169,6 @@ const renderToCanvas = async () => {
     const processedImageData = event.data;
     // 清除 Canvas 内容
     context.clearRect(0, 0, canvas.width, canvas.height);
-
 
     context!.putImageData(processedImageData, 0, 0);
 
