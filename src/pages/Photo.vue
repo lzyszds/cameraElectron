@@ -218,15 +218,15 @@ const changeTools = (val: string) => {
 nextTick(() => {
   initCamera();
   //视频宽度默认为父元素宽度
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 20 || 640;
+  // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 20 || 640;
 });
 
 // canvasWidth随着页面宽度变化而变化
 useEventListener("resize", () => {
   // 最大最小值
-  canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
-  if (canvasWidth.value > 1180) canvasWidth.value = 1180;
-  if (canvasWidth.value < 640) canvasWidth.value = 640;
+  // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
+  // if (canvasWidth.value > 1180) canvasWidth.value = 1180;
+  // if (canvasWidth.value < 640) canvasWidth.value = 640;
 });
 
 onBeforeUnmount(() => {
