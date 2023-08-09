@@ -13,6 +13,16 @@ import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
 import { videoFileDataType, MediaparasType } from "@/typing/_PhotoType";
 
+import {
+  nets,
+  TinyFaceDetectorOptions,
+  detectAllFaces,
+  draw,
+  createCanvasFromMedia,
+  resizeResults,
+} from "face-api.js";
+
+import specialEffects from '@/utils/specialEffects'
 const state = useStore();
 
 provide("RenderView", siderbar);
@@ -28,6 +38,8 @@ const mediaParas = reactive<MediaparasType>({
 const videoElement: Ref<HTMLVideoElement | null> = ref(null);
 //canvas元素引用
 const canvasElement: Ref<HTMLCanvasElement | null> = ref(null);
+//人脸轮廓元素引用
+const canvasFaceContour = ref<HTMLCanvasElement | null>(null);
 
 // 初始化摄像头
 const initCamera = async () => {
@@ -37,7 +49,61 @@ const initCamera = async () => {
       videoElement.value.srcObject = stream;
     }
     mediaParas.mediaStream = stream;
-    renderToCanvas();
+
+    // 监听视频加载完成事件
+    videoElement.value!.addEventListener("play", async () => {
+      try {
+        // 等待视频加载完成后再加载模型
+        await loadMods();
+        await renderToCanvas();
+        const faceContour = canvasFaceContour.value!;
+        const ctx = faceContour.getContext("2d")!;
+
+
+        // 开始进行人脸识别
+        setInterval(async () => {
+          const resizedDetections = await applyDetectFaces(faceContour, ctx);
+          if (!resizedDetections[0]) return
+          const landmarks = resizedDetections[0].landmarks
+          ctx.font = "30px dindin";
+          ctx.fillStyle = "#fff";
+          // 绘制文本，应用阴影
+          // ctx.shadowColor = "#000"; // 阴影颜色
+          // ctx.shadowOffsetX = 2; // 阴影在 x 轴上的偏移
+          // ctx.shadowOffsetY = 2; // 阴影在 y 轴上的偏移
+          // ctx.shadowBlur = 10; // 阴影的模糊程度
+          ctx.fillText("我叫徐志伟", landmarks.positions[0].x + 40, landmarks.positions[0].y - 100);
+          // 恢复绘图上下文的状态，去除阴影
+          // ctx.restore();
+          //哈士奇狗头特效
+          // specialEffects.hashiqi(ctx, landmarks)
+          //愤怒特效
+          // specialEffects.angry(ctx, landmarks) 
+          //猫须特效
+          specialEffects.cat(ctx, landmarks)
+
+          //在边框
+          // draw.drawDetections(faceContour, resizedDetections);
+          //人脸识别
+          // draw.drawFaceLandmarks(faceContour, resizedDetections);
+          //表情识别
+          // draw.drawFaceExpressions(faceContour, resizedDetections);
+        }, 0);
+
+      } catch (error) {
+        console.error("模型加载失败：", error);
+      }
+    });
+
+    // 加载模型的函数
+    const loadMods = async () => {
+      return Promise.all([
+        nets.tinyFaceDetector.loadFromUri("/models"),
+        nets.faceLandmark68Net.loadFromUri("/models"),
+        nets.faceRecognitionNet.loadFromUri("/models"),
+        nets.faceExpressionNet.loadFromUri("/models"),
+      ]);
+    };
   } catch (error) {
     console.error("访问摄像头时出错：", error);
   }
@@ -45,7 +111,6 @@ const initCamera = async () => {
 
 // 设置期望的宽高比，比如 16:9，4:3 等
 const desiredAspectRatio = computed(() => eval(state.ratioVideoData.replace(":", "/"))) as Ref<number>;
-console.log(`lzy  desiredAspectRatio:`, desiredAspectRatio.value)
 // 根据实际宽高比和期望宽高比来计算画布的宽高
 const canvasWidth = computed(() => {
   if (desiredAspectRatio.value > 1) {
@@ -61,18 +126,25 @@ const canvasHeight = computed(() => {
 // 使用 Web Workers 处理图像数据
 const worker = new Worker("/src/utils/worker.js");
 
+
 // 将视频渲染进canvas
-const renderToCanvas = () => {
+const renderToCanvas = async () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-
+  const context = canvas.getContext("2d", { willReadFrequently: true })!;
+  //表情识别
+  // draw.drawFaceExpressions(canvas, resizedDetections);
   // 在 OffscreenCanvas 中渲染视频帧
   const offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
-  const offscreenContext = offscreenCanvas.getContext(
-    "2d"
-  ) as OffscreenCanvasRenderingContext2D;
+  const offscreenContext = offscreenCanvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
   const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
+
+  //  // 获取人脸检测结果 //这个会导致人脸轮廓闪烁
+  // const detections = await applyDetectFaces();
+  // // 在缓冲区绘制人脸轮廓
+  // draw.drawFaceLandmarks(canvas, detections);
+
+  // 绘制视频图层
   offscreenContext.drawImage(video, x, y, newWidth, newHeight);
 
   // 获取 OffscreenCanvas 图像数据
@@ -89,15 +161,42 @@ const renderToCanvas = () => {
     imageData: imageData,
     params: { hue, saturation, brightness, contrast },
   });
+
   worker.onmessage = (event) => {
     // 获取处理后的图像数据
     const processedImageData = event.data;
+    // 清除 Canvas 内容
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+
     context!.putImageData(processedImageData, 0, 0);
 
     // 继续渲染下一帧
     requestAnimationFrame(renderToCanvas);
   };
 };
+
+
+
+async function applyDetectFaces(canvas, context) {
+  const detections = await detectAllFaces(
+    canvasElement.value!,
+    new TinyFaceDetectorOptions()
+  )
+    .withFaceLandmarks()
+    .withFaceDescriptors()
+    .withFaceExpressions();
+  // .withAgeAndGender();
+  const resizedDetections = resizeResults(detections, {
+    width: canvas!.width,
+    height: canvas!.height,
+  });
+  context.clearRect(0, 0, canvas!.width, canvas!.height);
+  //人脸识别
+  return resizedDetections
+}
+
+
 
 //背景透明
 // let r = data[i];
@@ -245,11 +344,15 @@ onBeforeUnmount(() => {
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
     <div
-      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
-      <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" :width="canvasWidth"
-        :height="canvasHeight" :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"></canvas>
-      <!-- <video ref="video" autoplay></video> -->
-      <video class="w-full h-[45%] object-contain" ref="videoElement" style="display: none" autoplay></video>
+      class=" h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
+      <div class="canvas-container">
+        <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" :width="canvasWidth"
+          :height="canvasHeight" :class="hasStartFlag ? 'border-red-500' : 'border-transparent'">
+        </canvas>
+        <canvas class="canvasFaceContour" ref="canvasFaceContour" :width="canvasWidth" :height="canvasHeight"></canvas>
+      </div>
+      <video :width="canvasWidth" :height="canvasHeight" class="object-contain" ref="videoElement" style="display: none"
+        autoplay></video>
 
       <div class="flex justify-between gap-5 px-4">
         <div class="flex">
@@ -281,4 +384,14 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss">
+.canvas-container {
+  position: relative;
+}
+
+.canvasFaceContour {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  translate: -50%;
+}
 </style>

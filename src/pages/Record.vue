@@ -35,6 +35,8 @@ onMounted(() => {
           height: videoElement.value!.videoHeight,
         });
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        //绘制盒子
+        // draw.drawDetections(canvas, resizedDetections);
         //人脸识别
         draw.drawFaceLandmarks(canvas, resizedDetections);
         //表情识别
