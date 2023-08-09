@@ -44,10 +44,19 @@ const initCamera = async () => {
 };
 
 // 设置期望的宽高比，比如 16:9，4:3 等
-const desiredAspectRatio = 16 / 9;
+const desiredAspectRatio = computed(() => eval(state.ratioVideoData.replace(":", "/"))) as Ref<number>;
+console.log(`lzy  desiredAspectRatio:`, desiredAspectRatio.value)
 // 根据实际宽高比和期望宽高比来计算画布的宽高
-const canvasWidth = ref(640); // 可以根据实际情况设置画布的宽度
-const canvasHeight = computed(() => canvasWidth.value / desiredAspectRatio);
+const canvasWidth = computed(() => {
+  if (desiredAspectRatio.value > 1) {
+    return 900
+  } else {
+    return 480
+  }
+});
+const canvasHeight = computed(() => {
+  return canvasWidth.value / desiredAspectRatio.value
+});
 
 // 使用 Web Workers 处理图像数据
 const worker = new Worker("/src/utils/worker.js");
@@ -235,9 +244,10 @@ onBeforeUnmount(() => {
     <!-- 操作栏 -->
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
-    <div class="h-[calc(100vh-50px)] select-none pt-0 px-1 grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
-      <canvas class="border-double border-2 m-auto" ref="canvasElement" :width="canvasWidth" :height="canvasHeight"
-        :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"></canvas>
+    <div
+      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
+      <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" :width="canvasWidth"
+        :height="canvasHeight" :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"></canvas>
       <!-- <video ref="video" autoplay></video> -->
       <video class="w-full h-[45%] object-contain" ref="videoElement" style="display: none" autoplay></video>
 

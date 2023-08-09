@@ -12,20 +12,16 @@ const changeTools = (val) => {
 
 <template>
   <div class="flex flex-col gap-4 mb-[200px] mt-8">
-    <div
-      v-for="item in siderbar"
-      :key="item.name"
+    <div v-for="item in siderbar" :key="item.name"
       class="sidebarItem flex flex-col justify-center items-center h-16 w-full cursor-pointer"
-      :class="{ active: activeTool === item.name }"
-      @click="changeTools(item.name)"
-    >
+      :class="{ active: activeTool === item.name }" @click="changeTools(item.name)">
       <LzyIcon :name="item.icon"></LzyIcon>
       <span class="text-[14px]">{{ item.title }}</span>
     </div>
   </div>
 </template>
 
-<style lang="scss" scoped>
+<style lang="scss" >
 .sidebarItem {
   &.active {
     svg {
@@ -34,6 +30,7 @@ const changeTools = (val) => {
       border-radius: 50%;
     }
   }
+
   svg {
     width: 30px;
     height: 30px;
