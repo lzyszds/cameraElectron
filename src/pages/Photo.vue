@@ -18,6 +18,7 @@ import {
   TinyFaceDetectorOptions,
   detectAllFaces,
   resizeResults,
+  draw
 } from "face-api.js";
 
 const state = useStore();
@@ -56,14 +57,25 @@ const initCamera = async () => {
         await renderToCanvas();
         const faceContour = canvasFaceContour.value!;
         const ctx = faceContour.getContext("2d")!;
-
+        const { width, height } = faceContour;
 
         // 开始进行人脸识别
         setInterval(async () => {
-          const resizedDetections = await applyDetectFaces(faceContour, ctx);
-          if (!resizedDetections[0]) return
+          const detections = await detectAllFaces(
+            videoElement.value!,
+            new TinyFaceDetectorOptions()
+          )
+            .withFaceLandmarks()
+            .withFaceDescriptors()
+            .withFaceExpressions();
+          // .withAgeAndGender();
+          const resizedDetections = resizeResults(detections, { width, height });
+          if (resizedDetections.length === 0) return
           const landmarks = resizedDetections[0].landmarks
+          ctx.clearRect(0, 0, width, height);
+
           state.handleEffects(landmarks, faceContour, ctx)
+          // draw.drawContour(ctx, landmarks.positions);
           //在边框
           // draw.drawDetections(faceContour, resizedDetections);
           //人脸识别
@@ -71,7 +83,7 @@ const initCamera = async () => {
           //表情识别
           // draw.drawFaceExpressions(faceContour, resizedDetections);
           //岁数和性别
-        }, 0);
+        }, 60);
 
       } catch (error) {
         console.error("模型加载失败：", error);
@@ -114,29 +126,24 @@ const canvasHeight = computed(() => {
 // 使用 Web Workers 处理图像数据
 const worker = new Worker("/src/utils/worker.js");
 
-
 // 将视频渲染进canvas
 const renderToCanvas = async () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
-  const context = canvas.getContext("2d", { willReadFrequently: true })!;
-  //表情识别
-  // draw.drawFaceExpressions(canvas, resizedDetections);
-  // 在 OffscreenCanvas 中渲染视频帧
-  const offscreenCanvas = new OffscreenCanvas(canvas.width, canvas.height);
-  const offscreenContext = offscreenCanvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
   const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
 
-  //  // 获取人脸检测结果 //这个会导致人脸轮廓闪烁
-  // const detections = await applyDetectFaces();
-  // // 在缓冲区绘制人脸轮廓
-  // draw.drawFaceLandmarks(canvas, detections);
+  const context = canvas.getContext("2d", { willReadFrequently: true })!;
+  // 在 OffscreenCanvas 中渲染视频帧
+  const offscreenCanvas = new OffscreenCanvas(newWidth, newHeight);
+  const offscreenContext = offscreenCanvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
+
 
   // 绘制视频图层
   offscreenContext.drawImage(video, x, y, newWidth, newHeight);
-
+  // 在 OffscreenCanvas 中渲染特效
+  offscreenContext.drawImage(canvasFaceContour.value!, 0, 0, newWidth, newHeight);
   // 获取 OffscreenCanvas 图像数据
-  const imageData = offscreenContext.getImageData(0, 0, canvas.width, canvas.height);
+  const imageData = offscreenContext.getImageData(0, 0, newWidth, newHeight);
 
   // 调整亮度、对比度和颜色通道
   let { contrast, brightness, saturation, hue } = state.fillterAgg;
@@ -154,7 +161,7 @@ const renderToCanvas = async () => {
     // 获取处理后的图像数据
     const processedImageData = event.data;
     // 清除 Canvas 内容
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.clearRect(0, 0, newWidth, newHeight);
 
     context!.putImageData(processedImageData, 0, 0);
 
@@ -163,25 +170,6 @@ const renderToCanvas = async () => {
   };
 };
 
-
-
-async function applyDetectFaces(canvas, context) {
-  const detections = await detectAllFaces(
-    canvasElement.value!,
-    new TinyFaceDetectorOptions()
-  )
-    .withFaceLandmarks()
-    .withFaceDescriptors()
-    .withFaceExpressions();
-  // .withAgeAndGender();
-  const resizedDetections = resizeResults(detections, {
-    width: canvas!.width,
-    height: canvas!.height,
-  });
-  context.clearRect(0, 0, canvas!.width, canvas!.height);
-  //人脸识别
-  return resizedDetections
-}
 
 
 
@@ -195,9 +183,8 @@ const hasStartFlag = ref<boolean>(false);
 // 开始录制
 let interTimefn: any = null;
 const startRecording = () => {
-  if (!mediaParas.mediaStream) return;
   if (!hasStartFlag.value) {
-    mediaParas.mediaRecorder = new MediaRecorder(mediaParas.mediaStream);
+    mediaParas.mediaRecorder = new MediaRecorder(canvasElement.value!.captureStream());
     mediaParas.mediaRecorder.ondataavailable = handleDataAvailable;
     mediaParas.mediaRecorder.start();
     hasStartFlag.value = true;
@@ -333,10 +320,10 @@ onBeforeUnmount(() => {
     <div
       class=" h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
       <div class="canvas-container">
-        <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" :width="canvasWidth"
-          :height="canvasHeight" :class="hasStartFlag ? 'border-red-500' : 'border-transparent'">
+        <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" width="640" height="480"
+          :class="hasStartFlag ? 'border-red-500' : 'border-transparent'">
         </canvas>
-        <canvas class="canvasFaceContour" ref="canvasFaceContour" :width="canvasWidth" :height="canvasHeight"></canvas>
+        <canvas class="canvasFaceContour" ref="canvasFaceContour" width="640" height="480"></canvas>
       </div>
       <video :width="canvasWidth" :height="canvasHeight" class="object-contain" ref="videoElement" style="display: none"
         autoplay></video>

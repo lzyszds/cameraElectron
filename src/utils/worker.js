@@ -6,7 +6,10 @@ onmessage = (event) => {
   const data = imageData.data;
   // event.data.params.hue = event.data.params.hue / 360;
   const params = event.data.params;
-
+  params.contrast /= 100;
+  params.brightness /= 100;
+  params.saturation /= 100;
+  params.hue /= 100;
   // 处理图像数据，这里使用你之前定义的 change_per_pix 函数
   for (let i = 0; i < data.length; i += 4) {
     change_per_pix(params, data, i);
