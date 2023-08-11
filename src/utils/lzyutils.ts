@@ -163,6 +163,27 @@ export function LNotification(val: string, time = 2000, postion: any = 'bottom-r
   });
 }
 
+// 图片加载器 将图像对象在初始化时加载，并在后续渲染时重复使用。
+class ImageLoader {
+  private imageCache: Map<string, HTMLImageElement> = new Map();
+
+  async loadImage(src: string): Promise<HTMLImageElement> {
+    console.log(this.imageCache);
+    if (this.imageCache.has(src)) {
+      return this.imageCache.get(src)!;
+    } else {
+      const img = new Image();
+      img.src = src;
+      await img.decode();
+      this.imageCache.set(src, img);
+      return img;
+    }
+  }
+}
+
+export const imageLoader = new ImageLoader();
+
+
 /** 
   * window.Notification
   * options：一个包含其他通知参数的对象，可以用来设置通知的其他属性，如下面的参数：
@@ -321,5 +342,6 @@ export default {
   setTime,
   rgbToHsl,
   hslToRgb,
-  windowTipiver
+  windowTipiver,
+  imageLoader
 };

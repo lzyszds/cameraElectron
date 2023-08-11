@@ -8,6 +8,7 @@
  * getRightEyeBrow(): 返回一个数组，包含了右眉毛关键点的坐标。
  * getChin(): 返回一个数组，包含了下巴的关键点坐标。
  */
+import { imageLoader } from '@/utils/lzyutils'
 
 export default {
   utils: {
@@ -81,28 +82,24 @@ export default {
       162 * 0.3
     );
   },
-  cat: function (ctx, getParas) {
+  cat: async function (ctx, getParas) {
     const getLeftEye = getParas.getLeftEye();
     const nost = getParas.getNose()
     const height = getParas.getNose()[Math.floor((nost.length - 1) / 2)].y
-    const catLeft = new Image();
-    catLeft.src = "src/assets/images/Effects/catLeft.png";
+    const catLeft = await imageLoader.loadImage("src/assets/images/Effects/catLeft.png");
     const deviationX = 30;
     const mulitple = 2.3;
     ctx.drawImage(catLeft, getLeftEye[0].x - deviationX, height, 20 * mulitple, 25 * mulitple);
 
     const getRightEye = getParas.getRightEye();
-    const catRight = new Image();
-    catRight.src = "src/assets/images/Effects/catRight.png";
+    const catRight = await imageLoader.loadImage("src/assets/images/Effects/catRight.png");
     ctx.drawImage(catRight, getRightEye[0].x + deviationX, height, 20 * mulitple, 25 * mulitple)
     const getLeftEar = getParas.getLeftEyeBrow()[0];
-    const catLeftEar = new Image();
-    catLeftEar.src = "src/assets/images/Effects/catLeftEar.png";
+    const catLeftEar = await imageLoader.loadImage("src/assets/images/Effects/catLeftEar.png");
     ctx.drawImage(catLeftEar, getLeftEar.x - 15, getLeftEar.y - 100, 33 * mulitple, 35 * mulitple);
 
     const getRightEar = getParas.getRightEyeBrow()[2];
-    const catRightEar = new Image();
-    catRightEar.src = "src/assets/images/Effects/catRightEar.png";
+    const catRightEar = await imageLoader.loadImage("src/assets/images/Effects/catRightEar.png");
     ctx.drawImage(catRightEar, getRightEar.x, getRightEar.y - 100, 33 * mulitple, 35 * mulitple);
   },
   //闪电特效
