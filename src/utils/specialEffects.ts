@@ -15,7 +15,6 @@ export default {
     isMouthOpen: function (getParas) {
       const mouth = getParas.getMouth(); // 获取嘴巴区域的关键点信息
       const mouthHeight = (mouth[13].y + mouth[14].y) / 2 - (mouth[18].y + mouth[19].y) / 2;
-      console.log(`lzy  mouthHeight:`, mouthHeight)
 
       // 判断嘴巴是否张开
       const openThreshold = -20; // 定义判断为张嘴的阈值
@@ -25,21 +24,21 @@ export default {
     }
   },
 
-  hashiqi: function (ctx, getParas) {
-    const hashiqi = new Image();
-    hashiqi.src = "src/assets/images/hashiqi.png";
+  dogHead: function (ctx, getParas) {
+    const dogHead = new Image();
+    dogHead.src = "src/assets/images/Effects/dogHead.png";
     ctx.drawImage(
-      hashiqi,
+      dogHead,
       getParas.positions[0].x - 40,
       getParas.positions[0].y - 300,
       597 * 0.7,
       783 * 0.7
     );
   },
-  angry: function (ctx, getParas) {
+  anger: function (ctx, getParas) {
     //将蒙版眼睛绘制在人脸上 左眼
     const maskImgLeftEye = new Image();
-    maskImgLeftEye.src = "src/assets/images/leftEye.png";
+    maskImgLeftEye.src = "src/assets/images/Effects/leftEye.png";
     const leftEye = getParas.getLeftEye();
     ctx.drawImage(
       maskImgLeftEye,
@@ -50,7 +49,7 @@ export default {
     );
     //将蒙版眼睛绘制在人脸上 右眼
     const maskImgRightEye = new Image();
-    maskImgRightEye.src = "src/assets/images/rightEye.png";
+    maskImgRightEye.src = "src/assets/images/Effects/rightEye.png";
     const rightEye = getParas.getRightEye();
     ctx.drawImage(
       maskImgRightEye,
@@ -61,7 +60,7 @@ export default {
     );
     //将蒙版嘴巴绘制在人脸上
     const maskImgMouth = new Image();
-    maskImgMouth.src = "src/assets/images/mouth.png";
+    maskImgMouth.src = "src/assets/images/Effects/mouth.png";
     const mouth = getParas.getMouth();
     ctx.drawImage(
       maskImgMouth,
@@ -72,7 +71,7 @@ export default {
     );
     //将蒙版眉毛绘制在人脸上
     const maskImgRightEyeBrow = new Image();
-    maskImgRightEyeBrow.src = "src/assets/images/rightEyeBrow.png";
+    maskImgRightEyeBrow.src = "src/assets/images/Effects/rightEyeBrow.png";
     const rightEyeBrow = getParas.getRightEyeBrow();
     ctx.drawImage(
       maskImgRightEyeBrow,
@@ -85,28 +84,26 @@ export default {
   cat: function (ctx, getParas) {
     const getLeftEye = getParas.getLeftEye();
     const nost = getParas.getNose()
-    const height = getParas.getNose()[Math.floor((nost.length - 1) / 3)].y
+    const height = getParas.getNose()[Math.floor((nost.length - 1) / 2)].y
     const catLeft = new Image();
-    catLeft.src = "src/assets/images/catLeft.png";
+    catLeft.src = "src/assets/images/Effects/catLeft.png";
     const deviationX = 30;
     const mulitple = 2.3;
-    ctx.drawImage(
-      catLeft,
-      getLeftEye[0].x - deviationX,
-      height,
-      20 * mulitple,
-      25 * mulitple
-    );
+    ctx.drawImage(catLeft, getLeftEye[0].x - deviationX, height, 20 * mulitple, 25 * mulitple);
+
     const getRightEye = getParas.getRightEye();
     const catRight = new Image();
-    catRight.src = "src/assets/images/catRight.png";
-    ctx.drawImage(
-      catRight,
-      getRightEye[0].x + deviationX,
-      height,
-      20 * mulitple,
-      25 * mulitple
-    )
+    catRight.src = "src/assets/images/Effects/catRight.png";
+    ctx.drawImage(catRight, getRightEye[0].x + deviationX, height, 20 * mulitple, 25 * mulitple)
+    const getLeftEar = getParas.getLeftEyeBrow()[0];
+    const catLeftEar = new Image();
+    catLeftEar.src = "src/assets/images/Effects/catLeftEar.png";
+    ctx.drawImage(catLeftEar, getLeftEar.x - 15, getLeftEar.y - 100, 33 * mulitple, 35 * mulitple);
+
+    const getRightEar = getParas.getRightEyeBrow()[2];
+    const catRightEar = new Image();
+    catRightEar.src = "src/assets/images/Effects/catRightEar.png";
+    ctx.drawImage(catRightEar, getRightEar.x, getRightEar.y - 100, 33 * mulitple, 35 * mulitple);
   },
   //闪电特效
   lightning: function (canv, ctx, getParas) {

@@ -19,6 +19,11 @@ export const siderbar: Siderbar[] = [
     icon: "solar:filters-broken",
   },
   {
+    title: "特效",
+    name: "effects",
+    icon: "icon-park-outline:effects",
+  },
+  {
     title: "文字",
     name: "text",
     icon: "mdi:format-text",
@@ -52,16 +57,6 @@ export const siderbar: Siderbar[] = [
     title: "画框",
     name: "frame",
     icon: "mdi:picture-in-picture-bottom-right",
-  },
-  {
-    title: "马赛克",
-    name: "mosaic",
-    icon: "mdi:blur-linear",
-  },
-  {
-    title: "涂鸦",
-    name: "graffiti",
-    icon: "mdi:brush",
   },
 ];
 

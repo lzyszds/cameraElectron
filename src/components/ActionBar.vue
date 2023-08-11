@@ -2,6 +2,7 @@
 import Adjust from "@/components/actionbarCompontens/Adjust.vue";
 import Ratio from "@/components/actionbarCompontens/Ratio.vue";
 import Filters from "@/components/actionbarCompontens/Filters.vue";
+import Effects from "@/components/actionbarCompontens/Effects.vue";
 import Text from "@/components/actionbarCompontens/Text.vue";
 import Sticker from "@/components/actionbarCompontens/Sticker.vue";
 import Crop from "@/components/actionbarCompontens/Crop.vue";
@@ -16,6 +17,7 @@ const componentsItems = {
   adjust: Adjust,
   ratio: Ratio,
   filters: Filters,
+  effects: Effects,
   text: Text,
   sticker: Sticker,
   crop: Crop,

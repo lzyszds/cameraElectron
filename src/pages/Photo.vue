@@ -17,11 +17,9 @@ import {
   nets,
   TinyFaceDetectorOptions,
   detectAllFaces,
-  draw,
   resizeResults,
 } from "face-api.js";
 
-import specialEffects from '@/utils/specialEffects'
 const state = useStore();
 
 provide("RenderView", siderbar);
@@ -65,19 +63,7 @@ const initCamera = async () => {
           const resizedDetections = await applyDetectFaces(faceContour, ctx);
           if (!resizedDetections[0]) return
           const landmarks = resizedDetections[0].landmarks
-          specialEffects.theForeheadFont(ctx, landmarks)
-          //哈士奇狗头特效
-          // specialEffects.hashiqi(ctx, landmarks)
-          //愤怒特效
-          // specialEffects.angry(ctx, landmarks) 
-          //猫须特效
-          specialEffects.cat(ctx, landmarks)
-          //张嘴时放出闪电特效
-          // if (specialEffects.utils.isMouthOpen(landmarks)) {
-          //   specialEffects.lightning(canvasFaceContour.value, ctx, landmarks)
-          //   ctx.clearRect(0, 0, faceContour.width, faceContour.height);
-          // }
-
+          state.handleEffects(landmarks, faceContour, ctx)
           //在边框
           // draw.drawDetections(faceContour, resizedDetections);
           //人脸识别
