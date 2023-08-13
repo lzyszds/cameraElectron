@@ -3,6 +3,7 @@ import catEffects from '@/assets/images/Effects/catEffects.png'
 import dogEffects from '@/assets/images/Effects/dogHeadEffects.png'
 import angerEffects from '@/assets/images/Effects/angerEffects.png'
 import lightningEffects from '@/assets/images/Effects/lightningEffects.png'
+import mask from '@/assets/images/Effects/mackEffects.png'
 import { useStore } from '@/store/store'
 const state = useStore()
 const arr = [
@@ -10,6 +11,7 @@ const arr = [
   { name: 'dogHead', title: '狗头', image: dogEffects },
   { name: 'anger', title: '愤怒表情', image: angerEffects },
   { name: 'lightning', title: '张嘴放电', image: lightningEffects },
+  { name: 'mask', title: '口罩', image: mask },
   // { name: '中值滤波', title: '中值滤波', image: '' },
   // { name: '高斯模糊', title: '高斯模糊', image: '' },
   // { name: '色彩增强', title: '色彩增强', image: '' },

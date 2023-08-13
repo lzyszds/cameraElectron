@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
-import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue";
+import { nextTick, provide, ref, onBeforeUnmount, reactive, computed, h } from "vue";
 import type { Ref } from "vue";
 import { useEventListener, useStorage } from "@vueuse/core";
 
 import { ElNotification } from "element-plus";
 import { useStore } from "@/store/store";
-import { formatDuration } from "@/utils/lzyutils";
+import { formatDuration, imageLoader } from "@/utils/lzyutils";
 
 import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
@@ -18,7 +18,8 @@ import {
   TinyFaceDetectorOptions,
   detectAllFaces,
   resizeResults,
-  draw
+  draw,
+  matchDimensions
 } from "face-api.js";
 
 const state = useStore();
@@ -72,9 +73,14 @@ const initCamera = async () => {
           const resizedDetections = resizeResults(detections, { width, height });
           if (resizedDetections.length === 0) return
           const landmarks = resizedDetections[0].landmarks
+          const { width: boxWidth, } = resizedDetections[0].detection.box;
+          // 计算脸部在屏幕中的宽度和高度的比例
+          const faceWidthToHeightRatio = boxWidth / width
+
           ctx.clearRect(0, 0, width, height);
 
-          state.handleEffects(landmarks, faceContour, ctx)
+
+          state.handleEffects(landmarks, faceContour, ctx, faceWidthToHeightRatio)
           // draw.drawContour(ctx, landmarks.positions);
           //在边框
           // draw.drawDetections(faceContour, resizedDetections);
@@ -326,7 +332,7 @@ onBeforeUnmount(() => {
         <canvas class="canvasFaceContour" ref="canvasFaceContour" width="640" height="480"></canvas>
       </div>
       <video :width="canvasWidth" :height="canvasHeight" class="object-contain" ref="videoElement" style="display: none"
-        autoplay></video>
+        autoplay src="../assets/images/VeryCapture_20230811171452.mp4"></video>
 
       <div class="flex justify-between gap-5 px-4">
         <div class="flex">

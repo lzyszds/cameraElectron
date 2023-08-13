@@ -25,20 +25,21 @@ export default {
     }
   },
 
-  dogHead: function (ctx, getParas) {
-    const dogHead = new Image();
+  dogHead: async function (ctx, getParas, sizeMulitple) {
+    console.log(`lzy  getParas:`, getParas)
+    const dogHead = await imageLoader.loadImage("src/assets/images/Effects/dogHead.png");
     dogHead.src = "src/assets/images/Effects/dogHead.png";
     ctx.drawImage(
       dogHead,
-      getParas.positions[0].x - 40,
-      getParas.positions[0].y - 300,
-      597 * 0.7,
-      783 * 0.7
+      getParas.shift.x + (30 * sizeMulitple),
+      getParas.shift.y - (250 * sizeMulitple),
+      597 * sizeMulitple,
+      783 * sizeMulitple
     );
   },
-  anger: function (ctx, getParas) {
+  anger: async function (ctx, getParas) {
     //将蒙版眼睛绘制在人脸上 左眼
-    const maskImgLeftEye = new Image();
+    const maskImgLeftEye = await imageLoader.loadImage("src/assets/images/Effects/leftEye.png");
     maskImgLeftEye.src = "src/assets/images/Effects/leftEye.png";
     const leftEye = getParas.getLeftEye();
     ctx.drawImage(
@@ -49,7 +50,7 @@ export default {
       129 * 0.3
     );
     //将蒙版眼睛绘制在人脸上 右眼
-    const maskImgRightEye = new Image();
+    const maskImgRightEye = await imageLoader.loadImage("src/assets/images/Effects/rightEye.png");
     maskImgRightEye.src = "src/assets/images/Effects/rightEye.png";
     const rightEye = getParas.getRightEye();
     ctx.drawImage(
@@ -60,7 +61,7 @@ export default {
       151 * 0.3
     );
     //将蒙版嘴巴绘制在人脸上
-    const maskImgMouth = new Image();
+    const maskImgMouth = await imageLoader.loadImage("src/assets/images/Effects/mouth.png");
     maskImgMouth.src = "src/assets/images/Effects/mouth.png";
     const mouth = getParas.getMouth();
     ctx.drawImage(
@@ -71,7 +72,7 @@ export default {
       111 * 0.5
     );
     //将蒙版眉毛绘制在人脸上
-    const maskImgRightEyeBrow = new Image();
+    const maskImgRightEyeBrow = await imageLoader.loadImage("src/assets/images/Effects/rightEyeBrow.png");
     maskImgRightEyeBrow.src = "src/assets/images/Effects/rightEyeBrow.png";
     const rightEyeBrow = getParas.getRightEyeBrow();
     ctx.drawImage(
@@ -82,25 +83,28 @@ export default {
       162 * 0.3
     );
   },
-  cat: async function (ctx, getParas) {
+  cat: async function (faceContour, ctx, getParas, sizeMultiple) {
     const getLeftEye = getParas.getLeftEye();
-    const nost = getParas.getNose()
-    const height = getParas.getNose()[Math.floor((nost.length - 1) / 2)].y
-    const catLeft = await imageLoader.loadImage("src/assets/images/Effects/catLeft.png");
+    const nose = getParas.getNose();
+    const height = nose[Math.floor((nose.length - 1) / 2)].y;
     const deviationX = 30;
-    const mulitple = 2.3;
-    ctx.drawImage(catLeft, getLeftEye[0].x - deviationX, height, 20 * mulitple, 25 * mulitple);
+    const catParts = [
+      { imgSrc: "src/assets/images/Effects/catLeft.png", x: getLeftEye[0].x - deviationX, y: height, width: 20, height: 25 },
+      { imgSrc: "src/assets/images/Effects/catRight.png", x: getParas.getRightEye()[0].x + deviationX, y: height, width: 20, height: 25 },
+      { imgSrc: "src/assets/images/Effects/catLeftEar.png", x: getParas.getLeftEyeBrow()[0].x - 15, y: getParas.getLeftEyeBrow()[0].y - 100, width: 33, height: 35 },
+      { imgSrc: "src/assets/images/Effects/catRightEar.png", x: getParas.getRightEyeBrow()[2].x, y: getParas.getRightEyeBrow()[2].y - 100, width: 33, height: 35 }
+    ];
 
-    const getRightEye = getParas.getRightEye();
-    const catRight = await imageLoader.loadImage("src/assets/images/Effects/catRight.png");
-    ctx.drawImage(catRight, getRightEye[0].x + deviationX, height, 20 * mulitple, 25 * mulitple)
-    const getLeftEar = getParas.getLeftEyeBrow()[0];
-    const catLeftEar = await imageLoader.loadImage("src/assets/images/Effects/catLeftEar.png");
-    ctx.drawImage(catLeftEar, getLeftEar.x - 15, getLeftEar.y - 100, 33 * mulitple, 35 * mulitple);
+    const loadImageAsync = async (src) => await imageLoader.loadImage(src);
 
-    const getRightEar = getParas.getRightEyeBrow()[2];
-    const catRightEar = await imageLoader.loadImage("src/assets/images/Effects/catRightEar.png");
-    ctx.drawImage(catRightEar, getRightEar.x, getRightEar.y - 100, 33 * mulitple, 35 * mulitple);
+    const drawCatPart = async (imgSrc, x, y, width, height) => {
+      const img = await loadImageAsync(imgSrc);
+      ctx.drawImage(img, x, y, width * sizeMultiple, height * sizeMultiple);
+    };
+
+    for (const part of catParts) {
+      await drawCatPart(part.imgSrc, part.x, part.y, part.width, part.height);
+    }
   },
   //闪电特效
   lightning: function (canv, ctx, getParas) {
@@ -124,6 +128,9 @@ export default {
       ctx.strokeStyle = "rgba(255, 255, 0, 1)"
       ctx.stroke();
       ctx.closePath();
+      ctx.beginPath();
+      // 清除剪切区域，以便绘制其他内容
+      ctx.restore();
       requestAnimationFrame(light);
     };
     light()
@@ -137,6 +144,24 @@ export default {
     // ctx.shadowOffsetY = 2; // 阴影在 y 轴上的偏移
     // ctx.shadowBlur = 10; // 阴影的模糊程度
     ctx.fillText("我叫徐志伟", getParas.positions[0].x + 40, getParas.positions[0].y - 100);
-  }
+  },
+  mask: function (ctx, getParas) {
+    console.log(`lzy  getParas:`, getParas)
+    // 绘制人脸轮廓
+    const faceContourData = getParas.getJawOutline();
+    for (let i = 1; i < faceContourData.length - 1; i++) {
+      ctx.lineTo(faceContourData[i].x, faceContourData[i].y);
+    }
+    ctx.strokeStyle = "rgba(0, 0, 0, 1)"
 
+    ctx.closePath();
+    ctx.stroke();
+
+    // 填充绘制的区域
+    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.fill();
+    ctx.beginPath();
+    // 清除剪切区域，以便绘制其他内容
+    ctx.restore();
+  }
 }

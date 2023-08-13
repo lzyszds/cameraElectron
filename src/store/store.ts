@@ -13,7 +13,7 @@ export const useStore = defineStore('counter', () => {
     actionToolsValue.value = val
   }
 
-  const handleEffects = (landmarks, faceContour, ctx) => {
+  const handleEffects = (landmarks, faceContour, ctx, sizeMulitple) => {
     switch (effectsData.value) {
       case 'theForeheadFont':
         //额头文字特效
@@ -21,7 +21,7 @@ export const useStore = defineStore('counter', () => {
         break;
       case 'dogHead':
         //哈士奇狗头特效
-        specialEffects.dogHead(ctx, landmarks)
+        specialEffects.dogHead(ctx, landmarks, sizeMulitple)
         break;
       case 'anger':
         //愤怒特效
@@ -29,7 +29,7 @@ export const useStore = defineStore('counter', () => {
         break;
       case 'cat':
         //猫须特效
-        specialEffects.cat(ctx, landmarks)
+        specialEffects.cat(faceContour, ctx, landmarks, sizeMulitple * 4,)
         break;
       case 'lightning':
         //张嘴时放出闪电特效
@@ -37,6 +37,10 @@ export const useStore = defineStore('counter', () => {
           specialEffects.lightning(faceContour, ctx, landmarks)
           ctx.clearRect(0, 0, faceContour.width, faceContour.height);
         }
+        break;
+      case 'mask':
+        //口罩特效
+        specialEffects.mask(ctx, landmarks)
         break;
       case 'notEffects':
         //无特效
@@ -46,8 +50,8 @@ export const useStore = defineStore('counter', () => {
     }
   }
 
-  
-  
+
+
   return {
     actionToolsValue,
     fillterAgg,

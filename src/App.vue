@@ -40,6 +40,7 @@ setInterval(() => {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: 36px 1fr;
+  user-select: none;
 }
 
 nav.navbar {
