@@ -141,7 +141,7 @@ const renderToCanvas = async () => {
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
   // 在 OffscreenCanvas 中渲染视频帧
   const offscreenCanvas = new OffscreenCanvas(newWidth, newHeight);
-  const offscreenContext = offscreenCanvas.getContext("2d") as OffscreenCanvasRenderingContext2D;
+  const offscreenContext = offscreenCanvas.getContext("2d", { willReadFrequently: true }) as OffscreenCanvasRenderingContext2D;
 
 
   // 绘制视频图层
