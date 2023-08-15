@@ -18,7 +18,3 @@ app.component('LzyIcon', LzyIcon)
   .component('LzyProgress', LzyProgress)
 app.use(pinia)
 app.mount('#app')
-
-// nextTick(() => {
-//   postMessage({ payload: 'removeLoading' }, '*')
-// })
