@@ -1,4 +1,4 @@
-import { ipcMain, dialog, nativeTheme, shell, clipboard, nativeImage } from 'electron';
+import { ipcMain, dialog, nativeTheme, shell, clipboard, nativeImage, desktopCapturer } from 'electron';
 import type { BrowserWindow, App } from 'electron';
 import fs from 'fs';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
@@ -6,10 +6,14 @@ import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您�
 export class WindowManager {
   private win: BrowserWindow;
   private app: App;
+  /* 是否正在录制 */
+  private isRecording: boolean;
 
   constructor(win: BrowserWindow, app: App) {
     this.win = win;
     this.app = app;
+    this.isRecording = false;
+
     // 注册事件监听
     // 窗口操作
     this.registerHandleWin();
@@ -23,6 +27,9 @@ export class WindowManager {
     this.registerOpenFile();
     // 复制文件进剪切板
     this.registerCopyFile()
+    // 录制桌面
+    this.registerDesktopRecord()
+
   }
 
   // 处理窗口操作请求
@@ -216,4 +223,12 @@ export class WindowManager {
     ipcMain.handle('onCopyFile', this.onCopyFile.bind(this));
   }
 
+  private async onDesktopRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
+    this.isRecording = true;
+    const sources = await desktopCapturer.getSources({ types: ['screen'] });
+    return sources[0].id
+  }
+  private registerDesktopRecord(): void {
+    ipcMain.handle('onDesktopRecord', this.onDesktopRecord.bind(this));
+  }
 }

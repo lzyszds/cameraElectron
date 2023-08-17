@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
-import { nextTick, provide, ref, onBeforeUnmount, reactive, computed, h } from "vue";
+import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue";
 import type { Ref } from "vue";
 import { useEventListener, useStorage } from "@vueuse/core";
 
 import { ElNotification } from "element-plus";
 import { useStore } from "@/store/store";
-import { formatDuration, imageLoader } from "@/utils/lzyutils";
+import { formatDuration } from "@/utils/lzyutils";
 
 import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";

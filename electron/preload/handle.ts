@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld(
     onOpenFile: (val) => ipcRenderer.invoke('onOpenFile', val),
     //复制文件进剪切板
     onCopyFile: (val) => ipcRenderer.invoke('onCopyFile', val),
+    //桌面录制
+    onDesktopRecord: (val) => ipcRenderer.invoke('onDesktopRecord', val),
   }
 )
 

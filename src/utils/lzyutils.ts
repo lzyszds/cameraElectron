@@ -329,6 +329,14 @@ export function hslToRgb([h, s, l]: number[]): number[] {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
 
+export function setTimeoutAsync(delay: number) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve('yes');
+    }, delay);
+  });
+}
+
 
 
 export default {
@@ -349,5 +357,6 @@ export default {
   rgbToHsl,
   hslToRgb,
   windowTipiver,
-  imageLoader
+  imageLoader,
+  setTimeoutAsync
 };
