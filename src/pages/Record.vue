@@ -5,9 +5,20 @@ import { setTimeoutAsync } from '@/utils/lzyutils'
 import { useEventListener } from '@vueuse/core'
 const recordedVideo = ref<HTMLVideoElement>()
 const recordedCanvas = ref<HTMLCanvasElement>()
+const nodeDivElement = ref<HTMLDivElement>()
 nextTick(() => {
   recordedCanvas.value!.width = recordedCanvas.value!.offsetWidth;
   recordedCanvas.value!.height = recordedCanvas.value!.offsetHeight;
+})
+
+const ratioScreen = reactive({
+  width: 0,
+  height: 0,
+  ratio: '16/9'
+})
+nextTick(() => {
+  ratioScreen.height = nodeDivElement.value!.offsetHeight - 20
+  ratioScreen.width = ratioScreen.height * 16 / 9
 })
 
 let stream;
@@ -92,20 +103,21 @@ const toMouseVis = () => {
   mouseVisuali.value = !mouseVisuali.value
   if (mouseVisuali.value) {
     //最大化窗口
-    window.myElectron.handleWin('maximize')
+    // window.myElectron.handleWin('maximize')
 
     const ctx = recordedCanvas.value!.getContext('2d')!;
     useEventListener(recordedVideo.value, 'play', async () => {
       const renderVideoFrame = async () => {
         const ratio = selectResRatio.value.split('*')
+        console.log(`lzy  ratio:`, ratio)
         const { x, y } = await window.myElectron.getMousePosition()
         // 计算缩放比例
         const scaleX = recordedCanvas.value!.width / Number(ratio[0]);
         const scaleY = recordedCanvas.value!.height / Number(ratio[1]);
 
         // 将鼠标坐标映射到录制视频分辨率上
-        const recordedX = Math.round((x - window.screenLeft) * scaleX);
-        const recordedY = Math.round((y - window.screenTop) * scaleY);
+        const recordedX = Math.round(x * scaleX);
+        const recordedY = Math.round(y * scaleY);
         drawFrameWithMouseSpotlight(recordedVideo.value!, ctx, recordedX, recordedY);
         // 在下一个动画帧中调用此函数，实现连续绘制
         requestAnimationFrame(() => {
@@ -130,13 +142,22 @@ function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: nu
   ctx.strokeStyle = 'red';
   ctx.stroke();
 }
+//监听窗口变化
+useEventListener(window, 'resize', () => {
+  ratioScreen.height = nodeDivElement.value!.offsetHeight - 20
+  ratioScreen.width = ratioScreen.height * 16 / 9
+  console.log(`lzy  window:`, window)
+
+})
+
 </script>
 
 <template>
   <div class="grid grid-rows-[1fr_200px] h-[calc(100vh-60px)] gap-3">
-    <div class="w-full h-full relative border-4 border-black ">
+    <div ref="nodeDivElement" id="nodeDivElement" class="w-full h-full relative border-4 border-black bg-black ">
       <video ref="recordedVideo" class="w-full h-full hidden" autoplay></video>
-      <canvas ref="recordedCanvas" class="w-full h-full p-0 absolute inset-0"></canvas>
+      <canvas ref="recordedCanvas" :width="ratioScreen.width" :height="ratioScreen.height"
+        class=" p-0 absolute topLeftCenter"></canvas>
     </div>
     <div class="recordTools grid grid-cols-12 grid-rows-5 gap-1">
       <button class="border-black border-2" :class="mouseVisuali ? 'bg-[var(--color)] text-[var(--reverColor)]' : ''"
