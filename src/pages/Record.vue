@@ -1,8 +1,14 @@
 <script setup lang='ts'>
 import { ElSelect, ElOption, ElLoading } from 'element-plus'
-import { ref, } from 'vue'
+import { reactive, ref, nextTick } from 'vue'
 import { setTimeoutAsync } from '@/utils/lzyutils'
+import { useEventListener } from '@vueuse/core'
 const recordedVideo = ref<HTMLVideoElement>()
+const recordedCanvas = ref<HTMLCanvasElement>()
+nextTick(() => {
+  recordedCanvas.value!.width = recordedCanvas.value!.offsetWidth;
+  recordedCanvas.value!.height = recordedCanvas.value!.offsetHeight;
+})
 
 let stream;
 
@@ -23,20 +29,20 @@ const toRecord = () => {
       stream.getTracks().forEach(track => track.stop());
     }
     const ratio = selectResRatio.value.split('*')
-    console.log(`lzy  ratio:`, ratio)
     try {
       // 设置媒体流的约束
       const constraints: any = {
         audio: false,
         video: {
           mandatory: {
-            chromeMediaSource: 'desktop',
-            chromeMediaSourceId: sourceId,
-            minWidth: ratio[0],
-            maxWidth: ratio[0],
-            minHeight: ratio[1],
-            maxHeight: ratio[1]
-          }
+            chromeMediaSource: 'desktop', // 设置桌面捕获源
+            chromeMediaSourceId: sourceId, // 设置桌面捕获源
+            minWidth: ratio[0], // 最小分辨率
+            maxWidth: ratio[0], // 最大分辨率
+            minHeight: ratio[1], // 最小分辨率
+            maxHeight: ratio[1], // 最大分辨率
+            minFrameRate: selectRefRate.value // 最小帧率
+          },
         }
       };
 
@@ -52,14 +58,13 @@ const toRecord = () => {
 }
 
 const resolutionRatio = [
-  { label: '2K', value: '2560*1440' },
   { label: '1080P', value: '1920*1080' },
   { label: '720P', value: '1280*720' },
   { label: '480P', value: '854*480' },
   { label: '360P', value: '640*360' },
-  { label: '240P', value: '426*240' }
 ]
 const selectResRatio = ref('1920*1080')
+
 //切换分辨率
 const toResRatio = async () => {
   if (recordedVideo.value!.paused) return
@@ -73,16 +78,77 @@ const toResRatio = async () => {
   loading.close()
   toRecord()
 }
+
+const refreshRate = [
+  { label: '60FPS', value: 60 },
+  { label: '30FPS', value: 30 },
+  { label: '15FPS', value: 15 },
+]
+const selectRefRate = ref(30)
+
+//鼠标明显化
+const mouseVisuali = ref(false)
+const toMouseVis = () => {
+  mouseVisuali.value = !mouseVisuali.value
+  if (mouseVisuali.value) {
+    //最大化窗口
+    window.myElectron.handleWin('maximize')
+
+    const ctx = recordedCanvas.value!.getContext('2d')!;
+    useEventListener(recordedVideo.value, 'play', async () => {
+      const renderVideoFrame = async () => {
+        const ratio = selectResRatio.value.split('*')
+        const { x, y } = await window.myElectron.getMousePosition()
+        // 计算缩放比例
+        const scaleX = recordedCanvas.value!.width / Number(ratio[0]);
+        const scaleY = recordedCanvas.value!.height / Number(ratio[1]);
+
+        // 将鼠标坐标映射到录制视频分辨率上
+        const recordedX = Math.round((x - window.screenLeft) * scaleX);
+        const recordedY = Math.round((y - window.screenTop) * scaleY);
+        drawFrameWithMouseSpotlight(recordedVideo.value!, ctx, recordedX, recordedY);
+        // 在下一个动画帧中调用此函数，实现连续绘制
+        requestAnimationFrame(() => {
+          renderVideoFrame();
+        });
+      }
+      await renderVideoFrame();
+    })
+  }
+}
+// 在绘制视频帧的过程中，绘制鼠标标记
+function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: number, y: number) {
+  const { width, height } = recordedCanvas.value!
+  ctx.clearRect(0, 0, width, height);
+  // 绘制视频帧
+  ctx.drawImage(video, 0, 0, width, height);
+  if (!mouseVisuali.value) return
+  // 绘制鼠标特写
+  ctx.beginPath();
+  ctx.arc(x, y, 20, 0, 2 * Math.PI);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'red';
+  ctx.stroke();
+}
 </script>
 
 <template>
-  <div class="grid grid-rows-[1fr_200px] h-[calc(100vh-60px)]">
-    <video ref="recordedVideo" class="w-full h-full" autoplay></video>
-    <div class="recordTools grid grid-cols-4 grid-rows-5">
+  <div class="grid grid-rows-[1fr_200px] h-[calc(100vh-60px)] gap-3">
+    <div class="w-full h-full relative border-4 border-black ">
+      <video ref="recordedVideo" class="w-full h-full hidden" autoplay></video>
+      <canvas ref="recordedCanvas" class="w-full h-full p-0 absolute inset-0"></canvas>
+    </div>
+    <div class="recordTools grid grid-cols-12 grid-rows-5 gap-1">
+      <button class="border-black border-2" :class="mouseVisuali ? 'bg-[var(--color)] text-[var(--reverColor)]' : ''"
+        @click="toMouseVis">鼠标特写</button>
       <button class="btn justify-center place-items-center" @click="toRecord">点击录屏</button>
-      <el-select v-model="selectResRatio" class="m-1 select-none" @change="toResRatio">
+      <el-select v-model="selectResRatio" class="m-1 mt-0 select-none" @change="toResRatio">
         <el-option v-for="item in resolutionRatio" :key="item.label" :label="item.label" :value="item.value" />
       </el-select>
+      <el-select v-model="selectRefRate" class="m-1 mt-0 select-none" @change="toResRatio">
+        <el-option v-for="item in refreshRate" :key="item.label" :label="item.label" :value="item.value" />
+      </el-select>
+
     </div>
   </div>
 </template>

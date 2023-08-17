@@ -19,3 +19,6 @@
 .el-message .el-message-icon--success {
   color: rgb(24, 160, 88);
 }
+.el-input .el-input__inner {
+  user-select: none;
+}

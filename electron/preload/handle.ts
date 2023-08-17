@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld(
     onCopyFile: (val) => ipcRenderer.invoke('onCopyFile', val),
     //桌面录制
     onDesktopRecord: (val) => ipcRenderer.invoke('onDesktopRecord', val),
+    //获取鼠标位置
+    getMousePosition: (val) => ipcRenderer.invoke('getMousePosition', val),
   }
 )
 

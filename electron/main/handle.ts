@@ -1,4 +1,4 @@
-import { ipcMain, dialog, nativeTheme, shell, clipboard, nativeImage, desktopCapturer } from 'electron';
+import { ipcMain, dialog, nativeTheme, shell, clipboard, nativeImage, desktopCapturer, screen } from 'electron';
 import type { BrowserWindow, App } from 'electron';
 import fs from 'fs';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
@@ -29,7 +29,8 @@ export class WindowManager {
     this.registerCopyFile()
     // 录制桌面
     this.registerDesktopRecord()
-
+    //获取鼠标位置
+    this.registerGetMousePosition()
   }
 
   // 处理窗口操作请求
@@ -222,13 +223,22 @@ export class WindowManager {
   private registerCopyFile(): void {
     ipcMain.handle('onCopyFile', this.onCopyFile.bind(this));
   }
-
+  //录制桌面屏幕
   private async onDesktopRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
     this.isRecording = true;
     const sources = await desktopCapturer.getSources({ types: ['screen'] });
     return sources[0].id
   }
+  // 注册 onDesktopRecord 事件监听
   private registerDesktopRecord(): void {
     ipcMain.handle('onDesktopRecord', this.onDesktopRecord.bind(this));
+  }
+  //获取鼠标位置
+  private async onGetMousePosition(event: Electron.IpcMainInvokeEvent, arg: any) {
+    return screen.getCursorScreenPoint()
+  }
+  // 注册 onGetMousePosition 事件监听
+  private registerGetMousePosition(): void {
+    ipcMain.handle('getMousePosition', this.onGetMousePosition.bind(this));
   }
 }
