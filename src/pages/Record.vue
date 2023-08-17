@@ -1,7 +1,10 @@
 <script setup lang='ts'>
 import { ElSelect, ElOption, ElLoading } from 'element-plus'
 import { ref, } from 'vue'
+import { setTimeoutAsync } from '@/utils/lzyutils'
 const recordedVideo = ref<HTMLVideoElement>()
+
+let stream;
 
 //文档https://www.electronjs.org/docs/latest/api/desktop-capturer
 const toRecord = () => {
@@ -16,6 +19,9 @@ const toRecord = () => {
   });
 
   async function startScreenRecording(sourceId) {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
     const ratio = selectResRatio.value.split('*')
     console.log(`lzy  ratio:`, ratio)
     try {
@@ -35,7 +41,7 @@ const toRecord = () => {
       };
 
       // 获取媒体流
-      let stream = await navigator.mediaDevices.getUserMedia(constraints);
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       // 将媒体流赋值给视频元素的 srcObject，实现播放
       recordedVideo.value!.srcObject = stream;
@@ -63,10 +69,9 @@ const toResRatio = async () => {
     text: 'Loading',
     background: 'rgba(255, 255, 255, 0.9)',
   })
-  setTimeout(() => {
-    loading.close()
-    toRecord()
-  }, 1000)
+  await setTimeoutAsync(1000)
+  loading.close()
+  toRecord()
 }
 </script>
 
