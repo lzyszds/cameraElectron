@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld(
     onDesktopRecord: (val) => ipcRenderer.invoke('onDesktopRecord', val),
     //获取鼠标位置
     getMousePosition: (val) => ipcRenderer.invoke('getMousePosition', val),
+    //置顶弹窗（解决区域选择问题）
+    onSetTopPopupGetPosition: (val) => ipcRenderer.invoke('onSetTopPopupGetPosition', val),
   }
 )
 

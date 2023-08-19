@@ -1,18 +1,25 @@
-import { ipcMain, dialog, nativeTheme, shell, clipboard, nativeImage, desktopCapturer, screen } from 'electron';
-import type { BrowserWindow, App } from 'electron';
+import { ipcMain, dialog, nativeTheme, shell, BrowserWindow, clipboard, nativeImage, desktopCapturer, screen, globalShortcut } from 'electron';
+import type { App } from 'electron';
+import { join } from 'node:path'
 import fs from 'fs';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
+
 
 export class WindowManager {
   private win: BrowserWindow;
   private app: App;
+  private mainWindow: BrowserWindow;
   /* 是否正在录制 */
   private isRecording: boolean;
+  /* 弹窗窗口声明定义 */
+  private popupWindow: BrowserWindow | null;
 
-  constructor(win: BrowserWindow, app: App) {
+  constructor(win: BrowserWindow, app: App, mainWindow: BrowserWindow) {
     this.win = win;
     this.app = app;
+    this.mainWindow = mainWindow;
     this.isRecording = false;
+    this.popupWindow = null;
 
     // 注册事件监听
     // 窗口操作
@@ -31,6 +38,8 @@ export class WindowManager {
     this.registerDesktopRecord()
     //获取鼠标位置
     this.registerGetMousePosition()
+    //置顶弹窗（解决区域选择问题）
+    this.registerSetTop()
   }
 
   // 处理窗口操作请求
@@ -240,5 +249,49 @@ export class WindowManager {
   // 注册 onGetMousePosition 事件监听
   private registerGetMousePosition(): void {
     ipcMain.handle('getMousePosition', this.onGetMousePosition.bind(this));
+  }
+  //popup置顶弹窗
+  private async onPopupTop(event: Electron.IpcMainInvokeEvent, arg: any) {
+    console.log(screen.getPrimaryDisplay().size);
+    if (!this.popupWindow) {
+      this.popupWindow = new BrowserWindow({
+        width: screen.getPrimaryDisplay().size.width,
+        height: screen.getPrimaryDisplay().size.height,
+        alwaysOnTop: true, // 设置为置顶
+        frame: false, // 隐藏窗口边框
+        parent: this.mainWindow, // 设置父窗口
+        modal: false, // 阻止与弹窗之外的内容交互
+        // focusable: false, // 设置为不可聚焦
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false,
+        },
+        backgroundColor: 'rgba(255,255,255,0)', // 设置透明背景颜色
+      });
+      const drawHtml = join(process.env.DIST, '../draw.html')
+      this.popupWindow.loadFile(drawHtml);
+      // this.popupWindow.setFullScreen(true);
+      // 监听从弹窗发送的消息
+      ipcMain.on('popup-close', (event, message) => {
+        if (!this.popupWindow) return console.log('this.popupWindow is null')
+        this.popupWindow.close();
+        this.popupWindow = null
+      });
+      //按esc退出弹窗
+      globalShortcut.register('Esc', () => {
+        if (!this.popupWindow) return console.log('this.popupWindow is null')
+        this.popupWindow.close();
+        this.popupWindow = null
+      })
+
+    } else {
+      this.popupWindow.close();
+      return this.popupWindow = null
+    }
+
+  }
+  // 注册 onSetTopPopupGetPosition 事件监听
+  private registerSetTop(): void {
+    ipcMain.handle('onSetTopPopupGetPosition', this.onPopupTop.bind(this));
   }
 }

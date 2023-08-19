@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain, contextBridge, ipcRenderer } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import remote from '@electron/remote/main'
@@ -47,7 +47,7 @@ async function createWindow() {
   win = new BrowserWindow({
     width: 1800,
     height: 1000,
-    minWidth: 1050,
+    minWidth: 1260,
     minHeight: 800,
     title: 'Main window',
     autoHideMenuBar: true,//隐藏菜单栏
@@ -84,15 +84,15 @@ async function createWindow() {
   })
   remote.enable(win.webContents)
   // win.webContents.on('will-navigate', (event, url) => { }) #344
+  return win
 }
 // 预加载（孤立世界）
 
 
-
-app.whenReady().then(() => {
-  createWindow();
+app.whenReady().then(async () => {
+  const mainWindow = await createWindow();
   //对窗口进行操作（放大缩小关闭）在此操作自定义属性
-  new WindowManager(win, app);
+  new WindowManager(win, app, mainWindow);
 })
 
 app.on('window-all-closed', () => {

@@ -23,6 +23,7 @@ nextTick(() => {
 
 let stream;
 
+//全屏录制
 //文档https://www.electronjs.org/docs/latest/api/desktop-capturer
 const toRecord = () => {
 
@@ -34,40 +35,44 @@ const toRecord = () => {
       console.error('没有可用的屏幕来源.');
     }
   });
+}
+let isOpenPopup = ref(false)
+//区域录制
+const toRecordArea = () => {
+  isOpenPopup.value = !isOpenPopup.value
+  window.myElectron.onSetTopPopupGetPosition(isOpenPopup.value ? 'open' : 'close')
+}
+async function startScreenRecording(sourceId) {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop());
+  }
+  const ratio = selectResRatio.value.split('*')
+  try {
+    // 设置媒体流的约束
+    const constraints: any = {
+      audio: false,
+      video: {
+        mandatory: {
+          chromeMediaSource: 'desktop', // 设置桌面捕获源
+          chromeMediaSourceId: sourceId, // 设置桌面捕获源
+          minWidth: ratio[0], // 最小分辨率
+          maxWidth: ratio[0], // 最大分辨率
+          minHeight: ratio[1], // 最小分辨率
+          maxHeight: ratio[1], // 最大分辨率
+          minFrameRate: selectRefRate.value // 最小帧率
+        },
+      }
+    };
 
-  async function startScreenRecording(sourceId) {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    const ratio = selectResRatio.value.split('*')
-    try {
-      // 设置媒体流的约束
-      const constraints: any = {
-        audio: false,
-        video: {
-          mandatory: {
-            chromeMediaSource: 'desktop', // 设置桌面捕获源
-            chromeMediaSourceId: sourceId, // 设置桌面捕获源
-            minWidth: ratio[0], // 最小分辨率
-            maxWidth: ratio[0], // 最大分辨率
-            minHeight: ratio[1], // 最小分辨率
-            maxHeight: ratio[1], // 最大分辨率
-            minFrameRate: selectRefRate.value // 最小帧率
-          },
-        }
-      };
+    // 获取媒体流
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // 获取媒体流
-      stream = await navigator.mediaDevices.getUserMedia(constraints);
-
-      // 将媒体流赋值给视频元素的 srcObject，实现播放
-      recordedVideo.value!.srcObject = stream;
-    } catch (error) {
-      console.error('访问错误屏幕截图:', error);
-    }
+    // 将媒体流赋值给视频元素的 srcObject，实现播放
+    recordedVideo.value!.srcObject = stream;
+  } catch (error) {
+    console.error('访问错误屏幕截图:', error);
   }
 }
-
 const resolutionRatio = [
   { label: '1080P', value: '1920*1080' },
   { label: '720P', value: '1280*720' },
@@ -146,8 +151,6 @@ function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: nu
 useEventListener(window, 'resize', () => {
   ratioScreen.height = nodeDivElement.value!.offsetHeight - 20
   ratioScreen.width = ratioScreen.height * 16 / 9
-  console.log(`lzy  window:`, window)
-
 })
 
 </script>
@@ -162,7 +165,9 @@ useEventListener(window, 'resize', () => {
     <div class="recordTools grid grid-cols-12 grid-rows-5 gap-1">
       <button class="border-black border-2" :class="mouseVisuali ? 'bg-[var(--color)] text-[var(--reverColor)]' : ''"
         @click="toMouseVis">鼠标特写</button>
-      <button class="btn justify-center place-items-center" @click="toRecord">点击录屏</button>
+
+      <button class="btn justify-center place-items-center" @click="toRecordArea">区域录屏</button>
+      <button class="btn justify-center place-items-center" @click="toRecord">全屏录屏</button>
       <el-select v-model="selectResRatio" class="m-1 mt-0 select-none" @change="toResRatio">
         <el-option v-for="item in resolutionRatio" :key="item.label" :label="item.label" :value="item.value" />
       </el-select>
