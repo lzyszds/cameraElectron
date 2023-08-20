@@ -3,6 +3,7 @@ import type { App } from 'electron';
 import { join } from 'node:path'
 import fs from 'fs';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
+import { startRecordShortcut } from './keyboard'
 
 
 export class WindowManager {
@@ -40,6 +41,7 @@ export class WindowManager {
     this.registerGetMousePosition()
     //置顶弹窗（解决区域选择问题）
     this.registerSetTop()
+    startRecordShortcut(this.onPopupTop.bind(this))
   }
 
   // 处理窗口操作请求
@@ -252,7 +254,6 @@ export class WindowManager {
   }
   //popup置顶弹窗
   private async onPopupTop(event: Electron.IpcMainInvokeEvent, arg: any) {
-    console.log(screen.getPrimaryDisplay().size);
     if (!this.popupWindow) {
       this.popupWindow = new BrowserWindow({
         width: screen.getPrimaryDisplay().size.width,
@@ -260,16 +261,19 @@ export class WindowManager {
         alwaysOnTop: true, // 设置为置顶
         frame: false, // 隐藏窗口边框
         parent: this.mainWindow, // 设置父窗口
-        modal: false, // 阻止与弹窗之外的内容交互
+        // modal: false, // 阻止与弹窗之外的内容交互
         // focusable: false, // 设置为不可聚焦
+        useContentSize: true, // 使用内容大小，而不是整体窗口大小
+        titleBarStyle: 'hidden', // 隐藏标题栏
+        transparent: true, // 设置透明
         webPreferences: {
           nodeIntegration: true,
           contextIsolation: false,
         },
-        backgroundColor: 'rgba(255,255,255,0)', // 设置透明背景颜色
       });
       const drawHtml = join(process.env.DIST, '../draw.html')
       this.popupWindow.loadFile(drawHtml);
+      this.popupWindow.webContents.openDevTools();
       // this.popupWindow.setFullScreen(true);
       // 监听从弹窗发送的消息
       ipcMain.on('popup-close', (event, message) => {
@@ -282,6 +286,7 @@ export class WindowManager {
         if (!this.popupWindow) return console.log('this.popupWindow is null')
         this.popupWindow.close();
         this.popupWindow = null
+        globalShortcut.unregister('Esc');
       })
 
     } else {

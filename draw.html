@@ -10,55 +10,191 @@
     body {
       margin: 0;
       overflow: hidden;
+      user-select: none;
+    }
+
+    .tools {
+      background-color: #fff;
+      padding: 10px 0px 10px 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 999;
+      display: none;
+    }
+
+    .tools button {
+      background-color: #0099ff;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
     }
   </style>
 </head>
 
 <body>
   <canvas style="width: 100vw;height: 100vh;"></canvas>
+  <div class="tools">
+    <button>开始录制</button>
+    <button id="closeBtn">退出录制</button>
+  </div>
 </body>
 <script>
   const { ipcRenderer } = require('electron');
   let startX, startY, endX, endY;
   let drawing = false;
-  let coordinates = {};
+  let isDrawEnd = false;
   const canvas = document.querySelector('canvas');
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 设置透明背景色
+  ctx.fillRect(0, 0, canvas.width, canvas.height); // 绘制整个透明矩形背景
+
 
   document.addEventListener('mousedown', (event) => {
+    if (isDrawEnd) return;
     startX = event.clientX;
     startY = event.clientY;
     drawing = true;
-
+    document.querySelector('.tools').style.display = 'none';
   });
 
+
   document.addEventListener('mousemove', (event) => {
-    if (!drawing) return;
+    if (!drawing || isDrawEnd) return;
     endX = event.clientX;
     endY = event.clientY;
-    const width = endX - startX;
-    const height = endY - startY;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // 清除画布
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)'; // 设置透明背景色
-    ctx.fillRect(0, 0, canvas.width, canvas.height); // 绘制整个透明矩形背景
-    ctx.clearRect(startX, startY, width, height); // 清空绘制区域
-    ctx.strokeStyle = 'red'; // 设置边框颜色
-    ctx.strokeRect(startX, startY, width, height); // 绘制矩形边框
+    updateCanvas()
   });
 
   document.addEventListener('mouseup', () => {
-    if (!drawing) return;
-    drawing = false;
-    coordinates = { startX, startY, endX, endY };
+    if (!drawing || isDrawEnd) return;
+    drawing = false; // 停止绘制
+    isDrawEnd = true; // 绘制结束
+    updateTools()
   });
 
-  document.addEventListener('dblclick', () => {
-    if (!coordinates.endY) return;
-    ipcRenderer.send('popup-close', coordinates);
+  document.addEventListener('dblclick', (event) => {
+    const doubleClickX = event.clientX;
+    const doubleClickY = event.clientY;
+    if (doubleClickX < startX || doubleClickX > endX || doubleClickY < startY || doubleClickY > endY) {
+      ipcRenderer.send('popup-close', {
+        startX,
+        startY,
+        endX,
+        endY
+      });
+      // 双击位置不在指定区域内，执行其他操作
+    } else {
+      // 双击位置在指定区域内
+    }
+  });
+  document.querySelector('#closeBtn').addEventListener('click', () => {
+    ipcRenderer.send('popup-close');
   })
+
+  function createRact(x, y) {
+    ctx.beginPath()
+    ctx.arc(x, y, 3, 0, 2 * Math.PI);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.stroke()
+  }
+  function updateTools() {
+    const top = startY < endY ? endY : startY;
+    const left = startX < endX ? endX : startX;
+    document.querySelector('.tools').style.display = 'block';
+    document.querySelector('.tools').style.top = top + 10 + 'px';
+    document.querySelector('.tools').style.left = left - 200 + 'px';
+  }
+
+  // 更新绘制的内容
+  function updateCanvas() {
+
+    // 清除画布
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 绘制透明背景
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 绘制矩形边框
+    const width = Math.abs(endX - startX);
+    const height = Math.abs(endY - startY);
+    ctx.strokeStyle = 'rgb(0, 153, 255)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(startX, startY, width, height);
+
+    // 绘制控制点
+    createRact(startX, startY); //左上角
+    createRact(endX, startY); //右上角
+    createRact(startX, endY); //左下角
+    createRact(endX, endY); //右下角
+    createRact((endX + startX) / 2, startY); //上中点
+    createRact((endX + startX) / 2, endY);  //下中点
+  }
+
+  function isPeriphery(event) {
+    const width = Math.abs(endX - startX);
+    const height = Math.abs(endY - startY);
+    const top = startY < endY ? startY : endY;
+    const left = startX < endX ? startX : endX;
+    const right = startX < endX ? endX : startX;
+    const bottom = startY < endY ? endY : startY;
+    const doubleClickX = event.clientX;
+    const doubleClickY = event.clientY;
+    if (doubleClickX < left || doubleClickX > right || doubleClickY < top || doubleClickY > bottom) {
+      return false;
+    } else {
+      return true;
+    }
+  }
+  let canvasIsMove = false;
+  let canvasDraw = false;
+  let canvasConfigPosition = {};
+
+  canvas.addEventListener('mousemove', (event) => {
+    if (!isDrawEnd) return;
+
+    if (isPeriphery(event) || canvasDraw) {
+      canvas.style.cursor = 'move';
+      canvasIsMove = true;
+      if (canvasDraw) {
+        const moveX = event.clientX - canvasConfigPosition.sx;
+        const moveY = event.clientY - canvasConfigPosition.sy;
+        canvasConfigPosition.sx = event.clientX;
+        canvasConfigPosition.sy = event.clientY;
+        startX += moveX;
+        startY += moveY;
+        endX += moveX;
+        endY += moveY;
+        updateCanvas();
+        updateTools()
+      }
+    } else {
+      canvas.style.cursor = 'default';
+      canvasIsMove = false;
+    }
+  });
+
+  canvas.addEventListener('mousedown', (event) => {
+    if (isPeriphery(event)) {
+      canvasDraw = true;
+      canvasConfigPosition.sx = event.clientX;
+      canvasConfigPosition.sy = event.clientY;
+    }
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    canvasDraw = false;
+    canvasConfigPosition = {};
+  });
 </script>
 
 </html>
