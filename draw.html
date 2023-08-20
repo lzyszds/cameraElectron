@@ -9,8 +9,10 @@
   <style>
     body {
       margin: 0;
-      overflow: hidden;
+      /* overflow: hidden; */
       user-select: none;
+      -webkit-user-drag: none;
+      cursor: crosshair;
     }
 
     .tools {
@@ -34,13 +36,21 @@
       cursor: pointer;
       margin-right: 10px;
     }
+
+    canvas {
+      margin: 0;
+      padding: 0;
+      display: block;
+      /* 防止行内元素的默认行高带来的影响 */
+      box-sizing: border-box;
+    }
   </style>
 </head>
 
 <body>
-  <canvas style="width: 100vw;height: 100vh;"></canvas>
+  <canvas width="1920" height="1080"></canvas>
   <div class="tools">
-    <button>开始录制</button>
+    <button id="startBtn">开始录制</button>
     <button id="closeBtn">退出录制</button>
   </div>
 </body>
@@ -50,63 +60,65 @@
   let drawing = false;
   let isDrawEnd = false;
   const canvas = document.querySelector('canvas');
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  const ctx = canvas.getContext('2d');
+  // 获取设备的像素比例
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  // 根据像素比例调整Canvas的显示尺寸
+  canvas.width = 1920 * devicePixelRatio;
+  canvas.height = 1080 * devicePixelRatio;
+
+  const ctx = canvas.getContext('2d')
+  // 缩放Canvas上下文，以便绘制不会被缩放
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
   ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; // 设置透明背景色
   ctx.fillRect(0, 0, canvas.width, canvas.height); // 绘制整个透明矩形背景
 
 
+  // 鼠标按下事件
   document.addEventListener('mousedown', (event) => {
-    if (isDrawEnd) return;
+    if (isDrawEnd) return; // 如果绘制已结束，不做处理
     startX = event.clientX;
     startY = event.clientY;
     drawing = true;
-    document.querySelector('.tools').style.display = 'none';
+    document.querySelector('.tools').style.display = 'none'; // 隐藏工具栏
   });
 
-
+  // 鼠标移动事件
   document.addEventListener('mousemove', (event) => {
-    if (!drawing || isDrawEnd) return;
+    console.log(`lzy  event:`, event.clientY)
+    if (!drawing || isDrawEnd) return; // 如果未按下或绘制已结束，不做处理
     endX = event.clientX;
     endY = event.clientY;
-    updateCanvas()
+    updateCanvas(); // 更新绘制内容
   });
 
+  // 鼠标释放事件
   document.addEventListener('mouseup', () => {
-    if (!drawing || isDrawEnd) return;
+    if (!drawing || isDrawEnd) return; // 如果未按下或绘制已结束，不做处理
     drawing = false; // 停止绘制
     isDrawEnd = true; // 绘制结束
-    updateTools()
+    updateTools(); // 更新工具栏位置
   });
 
-  document.addEventListener('dblclick', (event) => {
-    const doubleClickX = event.clientX;
-    const doubleClickY = event.clientY;
-    if (doubleClickX < startX || doubleClickX > endX || doubleClickY < startY || doubleClickY > endY) {
-      ipcRenderer.send('popup-close', {
-        startX,
-        startY,
-        endX,
-        endY
-      });
-      // 双击位置不在指定区域内，执行其他操作
-    } else {
-      // 双击位置在指定区域内
-    }
-  });
+  // 关闭按钮点击事件
   document.querySelector('#closeBtn').addEventListener('click', () => {
-    ipcRenderer.send('popup-close');
+    ipcRenderer.send('popup-close'); // 发送关闭消息给主进程
+  });
+  document.querySelector('#startBtn').addEventListener('click', () => {
+
   })
 
+  // 创建控制点
   function createRact(x, y) {
-    ctx.beginPath()
+    ctx.beginPath();
     ctx.arc(x, y, 3, 0, 2 * Math.PI);
     ctx.fillStyle = '#fff';
     ctx.fill();
-    ctx.stroke()
+    ctx.stroke();
   }
+  // 更新工具栏位置
   function updateTools() {
+    // 计算工具栏位置
     const top = startY < endY ? endY : startY;
     const left = startX < endX ? endX : startX;
     document.querySelector('.tools').style.display = 'block';
@@ -127,6 +139,7 @@
     // 绘制矩形边框
     const width = Math.abs(endX - startX);
     const height = Math.abs(endY - startY);
+    ctx.clearRect(startX, startY, width, height); // 清空绘制区域
     ctx.strokeStyle = 'rgb(0, 153, 255)';
     ctx.lineWidth = 3;
     ctx.strokeRect(startX, startY, width, height);
@@ -139,7 +152,7 @@
     createRact((endX + startX) / 2, startY); //上中点
     createRact((endX + startX) / 2, endY);  //下中点
   }
-
+  // 判断鼠标是否在绘制区域的周围
   function isPeriphery(event) {
     const width = Math.abs(endX - startX);
     const height = Math.abs(endY - startY);
@@ -158,8 +171,9 @@
   let canvasIsMove = false;
   let canvasDraw = false;
   let canvasConfigPosition = {};
-
+  // 鼠标移动事件（处理拖动绘制区域）
   canvas.addEventListener('mousemove', (event) => {
+    console.log(event.clientY, 'canvas');
     if (!isDrawEnd) return;
 
     if (isPeriphery(event) || canvasDraw) {
@@ -182,7 +196,7 @@
       canvasIsMove = false;
     }
   });
-
+  // 鼠标按下事件（准备拖动绘制区域）
   canvas.addEventListener('mousedown', (event) => {
     if (isPeriphery(event)) {
       canvasDraw = true;
@@ -190,7 +204,7 @@
       canvasConfigPosition.sy = event.clientY;
     }
   });
-
+  // 鼠标释放事件（停止拖动绘制区域）
   canvas.addEventListener('mouseup', () => {
     canvasDraw = false;
     canvasConfigPosition = {};

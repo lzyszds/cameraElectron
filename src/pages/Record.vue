@@ -153,6 +153,7 @@ useEventListener(window, 'resize', () => {
   ratioScreen.width = ratioScreen.height * 16 / 9
 })
 
+
 </script>
 
 <template>
@@ -160,7 +161,7 @@ useEventListener(window, 'resize', () => {
     <div ref="nodeDivElement" id="nodeDivElement" class="w-full h-full relative border-4 border-black bg-black ">
       <video ref="recordedVideo" class="w-full h-full hidden" autoplay></video>
       <canvas ref="recordedCanvas" :width="ratioScreen.width" :height="ratioScreen.height"
-        class=" p-0 absolute topLeftCenter"></canvas>
+        class=" p-0 absolute topLeftCenter "></canvas>
     </div>
     <div class="recordTools grid grid-cols-12 grid-rows-5 gap-1">
       <button class="border-black border-2" :class="mouseVisuali ? 'bg-[var(--color)] text-[var(--reverColor)]' : ''"

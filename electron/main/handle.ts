@@ -262,19 +262,26 @@ export class WindowManager {
         frame: false, // 隐藏窗口边框
         parent: this.mainWindow, // 设置父窗口
         // modal: false, // 阻止与弹窗之外的内容交互
-        // focusable: false, // 设置为不可聚焦
+        focusable: false, // 设置为不可聚焦
         useContentSize: true, // 使用内容大小，而不是整体窗口大小
         titleBarStyle: 'hidden', // 隐藏标题栏
         transparent: true, // 设置透明
+        resizable: false,//禁止调整大小
         webPreferences: {
           nodeIntegration: true,
           contextIsolation: false,
         },
       });
       const drawHtml = join(process.env.DIST, '../draw.html')
+
       this.popupWindow.loadFile(drawHtml);
-      this.popupWindow.webContents.openDevTools();
-      // this.popupWindow.setFullScreen(true);
+      // this.popupWindow.webContents.openDevTools();
+      /*
+        如果你希望将窗口显示在任务栏上方，即将任务栏区域覆盖，
+        可以使用 Electron 的 win.setAlwaysOnTop() 方法。
+        这将使你的窗口在屏幕上显示在最顶层，包括在任务栏之上。 
+      */
+      this.popupWindow.setFullScreen(true);
       // 监听从弹窗发送的消息
       ipcMain.on('popup-close', (event, message) => {
         if (!this.popupWindow) return console.log('this.popupWindow is null')
