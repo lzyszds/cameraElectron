@@ -19,20 +19,19 @@ const changeitem = (val: string) => {
 };
 //切换主题
 const changeTheme = () => {
-  window.myElectron.handleWin("changeTheme");
+  window.myElectron.onHandleWin("changeTheme");
 };
 //最小化窗
 const minimize = async () => {
   console.log(window.myElectron);
-  const res = await window.myElectron.handleWin("minimize");
+  const res = await window.myElectron.onHandleWin("minimize");
   //接收返回值
   console.log(`lzy  res:`, res);
 };
 //最大化窗口
 const maximize = () => {
   hasMaximize.value = !hasMaximize.value;
-  window.myElectron.handleWin("maximize");
-  // ipcRenderer.send('handleWin', 'maximize')
+  window.myElectron.onHandleWin("maximize");
 };
 //关闭窗口
 const close = () => {
@@ -41,7 +40,7 @@ const close = () => {
     title: "温馨提示",
     info: "是否退出程序",
     confirm: () => {
-      window.myElectron.handleWin("close");
+      window.myElectron.onHandleWin("close");
     },
   });
 };

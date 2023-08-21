@@ -41,6 +41,7 @@ export class WindowManager {
     this.registerGetMousePosition()
     //置顶弹窗（解决区域选择问题）
     this.registerSetTop()
+    //注册快捷键
     startRecordShortcut(this.onPopupTop.bind(this))
   }
 
@@ -254,53 +255,61 @@ export class WindowManager {
   }
   //popup置顶弹窗
   private async onPopupTop(event: Electron.IpcMainInvokeEvent, arg: any) {
-    if (!this.popupWindow) {
-      this.popupWindow = new BrowserWindow({
-        width: screen.getPrimaryDisplay().size.width,
-        height: screen.getPrimaryDisplay().size.height,
-        alwaysOnTop: true, // 设置为置顶
-        frame: false, // 隐藏窗口边框
-        parent: this.mainWindow, // 设置父窗口
-        // modal: false, // 阻止与弹窗之外的内容交互
-        focusable: false, // 设置为不可聚焦
-        useContentSize: true, // 使用内容大小，而不是整体窗口大小
-        titleBarStyle: 'hidden', // 隐藏标题栏
-        transparent: true, // 设置透明
-        resizable: false,//禁止调整大小
-        webPreferences: {
-          nodeIntegration: true,
-          contextIsolation: false,
-        },
-      });
-      const drawHtml = join(process.env.DIST, '../draw.html')
+    return await new Promise(async (resolve, reject) => {
+      if (!this.popupWindow) {
+        this.popupWindow = new BrowserWindow({
+          width: screen.getPrimaryDisplay().size.width,
+          height: screen.getPrimaryDisplay().size.height,
+          alwaysOnTop: true, // 设置为置顶
+          frame: false, // 隐藏窗口边框
+          parent: this.mainWindow, // 设置父窗口
+          // modal: false, // 阻止与弹窗之外的内容交互
+          focusable: false, // 设置为不可聚焦
+          useContentSize: true, // 使用内容大小，而不是整体窗口大小
+          titleBarStyle: 'hidden', // 隐藏标题栏
+          transparent: true, // 设置透明
+          resizable: false,//禁止调整大小
+          webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+          },
+        });
+        const drawHtml = join(process.env.DIST, '../draw.html')
 
-      this.popupWindow.loadFile(drawHtml);
-      // this.popupWindow.webContents.openDevTools();
-      /*
-        如果你希望将窗口显示在任务栏上方，即将任务栏区域覆盖，
-        可以使用 Electron 的 win.setAlwaysOnTop() 方法。
-        这将使你的窗口在屏幕上显示在最顶层，包括在任务栏之上。 
-      */
-      this.popupWindow.setFullScreen(true);
-      // 监听从弹窗发送的消息
-      ipcMain.on('popup-close', (event, message) => {
-        if (!this.popupWindow) return console.log('this.popupWindow is null')
+        this.popupWindow.loadFile(drawHtml);
+        // this.popupWindow.webContents.openDevTools();
+        /*
+          如果你希望将窗口显示在任务栏上方，即将任务栏区域覆盖，
+          可以使用 Electron 的 win.setAlwaysOnTop() 方法。
+          这将使你的窗口在屏幕上显示在最顶层，包括在任务栏之上。 
+        */
+        this.popupWindow.setFullScreen(true);
+        // 监听从弹窗发送的消息
+        ipcMain.on('popup-close', (event, message) => {
+          if (!this.popupWindow) return console.log('this.popupWindow is null')
+          this.popupWindow.close();
+          this.popupWindow = null
+          globalShortcut.unregister('Esc');
+        });
+        // 监听从弹窗发送的消息 开始录制
+        ipcMain.on('popup-start', (event, message) => {
+          resolve(message)
+        });
+        //按esc退出弹窗
+        globalShortcut.register('Esc', () => {
+          if (!this.popupWindow) return console.log('this.popupWindow is null')
+          this.popupWindow.close();
+          this.popupWindow = null
+          globalShortcut.unregister('Esc');
+        })
+
+      } else {
         this.popupWindow.close();
-        this.popupWindow = null
-      });
-      //按esc退出弹窗
-      globalShortcut.register('Esc', () => {
-        if (!this.popupWindow) return console.log('this.popupWindow is null')
-        this.popupWindow.close();
-        this.popupWindow = null
         globalShortcut.unregister('Esc');
-      })
+        return this.popupWindow = null
+      }
 
-    } else {
-      this.popupWindow.close();
-      return this.popupWindow = null
-    }
-
+    })
   }
   // 注册 onSetTopPopupGetPosition 事件监听
   private registerSetTop(): void {

@@ -1,29 +1,26 @@
 
 import { contextBridge, ipcRenderer } from 'electron'
 
-contextBridge.exposeInMainWorld(
-  'myElectron',
-  {
-    //窗口操作
-    handleWin: (val) => ipcRenderer.invoke('onHandleWin', val),
-    //储存录制视频 （参数：视频路径）
-    saveDeviceVideo: (val) => ipcRenderer.invoke('saveDeviceVideo', val),
-    //删除指定视频（参数：视频路径）
-    onDelToVideo: (val) => ipcRenderer.invoke('onDelToVideo', val),
-    //打开文件夹
-    onOpenFolder: (val) => ipcRenderer.invoke('onOpenFolder', val),
-    //打开文件
-    onOpenFile: (val) => ipcRenderer.invoke('onOpenFile', val),
-    //复制文件进剪切板
-    onCopyFile: (val) => ipcRenderer.invoke('onCopyFile', val),
-    //桌面录制
-    onDesktopRecord: (val) => ipcRenderer.invoke('onDesktopRecord', val),
-    //获取鼠标位置
-    getMousePosition: (val) => ipcRenderer.invoke('getMousePosition', val),
-    //置顶弹窗（解决区域选择问题）
-    onSetTopPopupGetPosition: (val) => ipcRenderer.invoke('onSetTopPopupGetPosition', val),
-  }
-)
+
+const validChannels = [
+  'onHandleWin',
+  'saveDeviceVideo',
+  'onDelToVideo',
+  'onOpenFolder',
+  'onOpenFile',
+  'onCopyFile',
+  'onDesktopRecord',
+  'getMousePosition',
+  'onSetTopPopupGetPosition',
+]
+
+const myElectron = {}
+validChannels.forEach((channel) => {
+  myElectron[channel] = (...args) => ipcRenderer.invoke(channel, ...args)
+})
+
+
+contextBridge.exposeInMainWorld('myElectron', myElectron)
 
 
 

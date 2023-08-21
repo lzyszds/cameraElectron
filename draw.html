@@ -56,7 +56,7 @@
 </body>
 <script>
   const { ipcRenderer } = require('electron');
-  let startX, startY, endX, endY;
+  let startX, startY, endX, endY, width, height;
   let drawing = false;
   let isDrawEnd = false;
   const canvas = document.querySelector('canvas');
@@ -85,7 +85,6 @@
 
   // 鼠标移动事件
   document.addEventListener('mousemove', (event) => {
-    console.log(`lzy  event:`, event.clientY)
     if (!drawing || isDrawEnd) return; // 如果未按下或绘制已结束，不做处理
     endX = event.clientX;
     endY = event.clientY;
@@ -105,7 +104,8 @@
     ipcRenderer.send('popup-close'); // 发送关闭消息给主进程
   });
   document.querySelector('#startBtn').addEventListener('click', () => {
-
+    console.log(123);
+    ipcRenderer.send('popup-start', { width, height, startX, startY }); // 发送关闭消息给主进程
   })
 
   // 创建控制点
@@ -122,13 +122,16 @@
     const top = startY < endY ? endY : startY;
     const left = startX < endX ? endX : startX;
     document.querySelector('.tools').style.display = 'block';
-    document.querySelector('.tools').style.top = top + 10 + 'px';
+    if (top + 10 + 50 > canvas.height) {
+      document.querySelector('.tools').style.top = top - 10 - 50 + 'px';
+    } else {
+      document.querySelector('.tools').style.top = top + 10 + 'px';
+    }
     document.querySelector('.tools').style.left = left - 200 + 'px';
   }
 
   // 更新绘制的内容
   function updateCanvas() {
-
     // 清除画布
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -137,8 +140,8 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 绘制矩形边框
-    const width = Math.abs(endX - startX);
-    const height = Math.abs(endY - startY);
+    width = Math.abs(endX - startX);
+    height = Math.abs(endY - startY);
     ctx.clearRect(startX, startY, width, height); // 清空绘制区域
     ctx.strokeStyle = 'rgb(0, 153, 255)';
     ctx.lineWidth = 3;
@@ -154,8 +157,8 @@
   }
   // 判断鼠标是否在绘制区域的周围
   function isPeriphery(event) {
-    const width = Math.abs(endX - startX);
-    const height = Math.abs(endY - startY);
+    width = Math.abs(endX - startX);
+    height = Math.abs(endY - startY);
     const top = startY < endY ? startY : endY;
     const left = startX < endX ? startX : endX;
     const right = startX < endX ? endX : startX;
@@ -173,7 +176,6 @@
   let canvasConfigPosition = {};
   // 鼠标移动事件（处理拖动绘制区域）
   canvas.addEventListener('mousemove', (event) => {
-    console.log(event.clientY, 'canvas');
     if (!isDrawEnd) return;
 
     if (isPeriphery(event) || canvasDraw) {

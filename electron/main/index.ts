@@ -90,9 +90,11 @@ async function createWindow() {
 
 
 app.whenReady().then(async () => {
+
   const mainWindow = await createWindow();
   //对窗口进行操作（放大缩小关闭）在此操作自定义属性
   new WindowManager(win, app, mainWindow);
+
 })
 
 app.on('window-all-closed', () => {

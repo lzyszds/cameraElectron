@@ -1,47 +1,46 @@
 <script setup lang='ts'>
 import { ElSelect, ElOption, ElLoading } from 'element-plus'
-import { reactive, ref, nextTick } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { setTimeoutAsync } from '@/utils/lzyutils'
 import { useEventListener } from '@vueuse/core'
 const recordedVideo = ref<HTMLVideoElement>()
 const recordedCanvas = ref<HTMLCanvasElement>()
 const nodeDivElement = ref<HTMLDivElement>()
-nextTick(() => {
-  recordedCanvas.value!.width = recordedCanvas.value!.offsetWidth;
-  recordedCanvas.value!.height = recordedCanvas.value!.offsetHeight;
-})
-
 const ratioScreen = reactive({
   width: 0,
   height: 0,
   ratio: '16/9'
 })
-nextTick(() => {
-  ratioScreen.height = nodeDivElement.value!.offsetHeight - 20
-  ratioScreen.width = ratioScreen.height * 16 / 9
-})
-
+//录制视频流
 let stream;
+//是否为区域录制
+let isPositionRecord = ref(false)
+
+//文档https://www.electronjs.org/docs/latest/api/desktop-capturer
+// 调用 Electron 主进程中的 onDesktopRecord 方法 来获取屏幕截图
+const getSourcesAndSet = async () => {
+  const sources = await window.myElectron.onDesktopRecord()
+  if (sources) {
+    startScreenRecording(sources);
+  } else {
+    console.error('没有可用的屏幕来源.');
+  }
+}
 
 //全屏录制
-//文档https://www.electronjs.org/docs/latest/api/desktop-capturer
 const toRecord = () => {
-
-  // 调用 Electron 主进程中的 onDesktopRecord 方法
-  window.myElectron.onDesktopRecord().then(async (sourceId) => {
-    if (sourceId) {
-      startScreenRecording(sourceId);
-    } else {
-      console.error('没有可用的屏幕来源.');
-    }
-  });
+  isPositionRecord.value = false
+  getSourcesAndSet()
 }
-let isOpenPopup = ref(false)
+//区域录制所需参数
+const positionRect = ref({ startX: 0, startY: 0, width: 0, height: 0 })
 //区域录制
-const toRecordArea = () => {
-  isOpenPopup.value = !isOpenPopup.value
-  window.myElectron.onSetTopPopupGetPosition(isOpenPopup.value ? 'open' : 'close')
+const toRecordArea = async () => {
+  isPositionRecord.value = true
+  positionRect.value = await window.myElectron.onSetTopPopupGetPosition()
+  getSourcesAndSet()
 }
+//开始录制
 async function startScreenRecording(sourceId) {
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
@@ -59,7 +58,7 @@ async function startScreenRecording(sourceId) {
           maxWidth: ratio[0], // 最大分辨率
           minHeight: ratio[1], // 最小分辨率
           maxHeight: ratio[1], // 最大分辨率
-          minFrameRate: selectRefRate.value // 最小帧率
+          minFrameRate: selectRefRate.value, // 最小帧率
         },
       }
     };
@@ -106,39 +105,47 @@ const selectRefRate = ref(30)
 const mouseVisuali = ref(false)
 const toMouseVis = () => {
   mouseVisuali.value = !mouseVisuali.value
-  if (mouseVisuali.value) {
-    //最大化窗口
-    // window.myElectron.handleWin('maximize')
-
-    const ctx = recordedCanvas.value!.getContext('2d')!;
-    useEventListener(recordedVideo.value, 'play', async () => {
-      const renderVideoFrame = async () => {
-        const ratio = selectResRatio.value.split('*')
-        console.log(`lzy  ratio:`, ratio)
-        const { x, y } = await window.myElectron.getMousePosition()
-        // 计算缩放比例
-        const scaleX = recordedCanvas.value!.width / Number(ratio[0]);
-        const scaleY = recordedCanvas.value!.height / Number(ratio[1]);
-
-        // 将鼠标坐标映射到录制视频分辨率上
-        const recordedX = Math.round(x * scaleX);
-        const recordedY = Math.round(y * scaleY);
-        drawFrameWithMouseSpotlight(recordedVideo.value!, ctx, recordedX, recordedY);
-        // 在下一个动画帧中调用此函数，实现连续绘制
-        requestAnimationFrame(() => {
-          renderVideoFrame();
-        });
-      }
-      await renderVideoFrame();
-    })
-  }
 }
+
+onMounted(() => {
+  //为了让canvas的宽高跟body的宽高一样，不如会导致全屏的时候，canvas的宽高不够
+  ratioScreen.height = nodeDivElement.value!.offsetHeight - 20
+  ratioScreen.width = ratioScreen.height * 16 / 9
+
+  useEventListener(recordedVideo.value, 'play', async () => {
+    const ctx = recordedCanvas.value!.getContext('2d')!;
+    const renderVideoFrame = async () => {
+      const ratio = selectResRatio.value.split('*')
+      const { x, y } = await window.myElectron.getMousePosition()
+      // 计算缩放比例
+      const scaleX = recordedCanvas.value!.width / Number(ratio[0]);
+      const scaleY = recordedCanvas.value!.height / Number(ratio[1]);
+
+      // 将鼠标坐标映射到录制视频分辨率上
+      const recordedX = Math.round(x * scaleX);
+      const recordedY = Math.round(y * scaleY);
+      drawFrameWithMouseSpotlight(recordedVideo.value!, ctx, recordedX, recordedY);
+      // 在下一个动画帧中调用此函数，实现连续绘制
+      requestAnimationFrame(() => {
+        renderVideoFrame();
+      });
+    }
+    await renderVideoFrame();
+  })
+})
+
 // 在绘制视频帧的过程中，绘制鼠标标记
 function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: number, y: number) {
   const { width, height } = recordedCanvas.value!
   ctx.clearRect(0, 0, width, height);
   // 绘制视频帧
-  ctx.drawImage(video, 0, 0, width, height);
+  if (isPositionRecord.value) {
+    const { startX, startY, width: w, height: h } = positionRect.value
+    ctx.drawImage(video, startX, startY, w, h, 0, 0, w, h);
+  } else {
+    ctx.drawImage(video, 0, 0, width, height);
+  }
+
   if (!mouseVisuali.value) return
   // 绘制鼠标特写
   ctx.beginPath();
@@ -152,8 +159,6 @@ useEventListener(window, 'resize', () => {
   ratioScreen.height = nodeDivElement.value!.offsetHeight - 20
   ratioScreen.width = ratioScreen.height * 16 / 9
 })
-
-
 </script>
 
 <template>
