@@ -25,6 +25,7 @@
       left: 0;
       z-index: 999;
       display: none;
+      cursor: inherit;
     }
 
     .tools button {
@@ -44,6 +45,17 @@
       /* 防止行内元素的默认行高带来的影响 */
       box-sizing: border-box;
     }
+
+    .timing {
+      display: none;
+      position: fixed;
+      top: 50%;
+      right: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 40px;
+      font-weight: bold;
+    }
   </style>
 </head>
 
@@ -51,8 +63,10 @@
   <canvas width="1920" height="1080"></canvas>
   <div class="tools">
     <button id="startBtn">开始录制</button>
+    <button id="endBtn">结束录制</button>
     <button id="closeBtn">退出录制</button>
   </div>
+  <div class="timing"> 3 </div>
 </body>
 <script>
   const { ipcRenderer } = require('electron');
@@ -104,10 +118,26 @@
     ipcRenderer.send('popup-close'); // 发送关闭消息给主进程
   });
   document.querySelector('#startBtn').addEventListener('click', () => {
-    console.log(123);
     ipcRenderer.send('popup-start', { width, height, startX, startY }); // 发送关闭消息给主进程
+    document.querySelector('.timing').style.display = 'block';
+    //提醒用户倒计时3秒
+    let count = 3;
+    const timer = setInterval(() => {
+      if (count === 0) {
+        clearInterval(timer);
+        document.querySelector('.timing').style.display = 'none';
+        setTimeout(() => {
+          document.querySelector('#endBtn').click();
+        }, 10000)
+        return ipcRenderer.send('popup-recording');
+      }
+      count--;
+      document.querySelector('.timing').innerHTML = count;
+    }, 1000);
   })
-
+  document.querySelector('#endBtn').addEventListener('click', () => {
+    ipcRenderer.send('popup-end'); // 发送关闭消息给主进程
+  });
   // 创建控制点
   function createRact(x, y) {
     ctx.beginPath();

@@ -11,13 +11,15 @@ const ratioScreen = reactive({
   height: 0,
   ratio: '16/9'
 })
-//录制视频流
+//视频流
 let stream;
+//录制时的视频流
+let recordedStream = ref<BlobPart[]>([]);
 //是否为区域录制
 let isPositionRecord = ref(false)
 
 //文档https://www.electronjs.org/docs/latest/api/desktop-capturer
-// 调用 Electron 主进程中的 onDesktopRecord 方法 来获取屏幕截图
+// 调用 Electron 主进程中的 onDesktopRecord 方法 来获取屏幕sourcesid
 const getSourcesAndSet = async () => {
   const sources = await window.myElectron.onDesktopRecord()
   if (sources) {
@@ -39,8 +41,26 @@ const toRecordArea = async () => {
   isPositionRecord.value = true
   positionRect.value = await window.myElectron.onSetTopPopupGetPosition()
   getSourcesAndSet()
+  window.myElectron.startRecord().then(() => {
+    startRecording()
+    window.myElectron.endRecord().then(() => {
+      const blob = new Blob(recordedStream.value, { type: 'video/webm' });
+      const reader = new FileReader();
+      reader.onload = () => {
+        const arrayBuffer = reader.result;
+        // 发送 Blob 数据给主进程
+        window.myElectron.saveDeviceVideo({ arrayBuffer }).then((res) => {
+          if (res === "Error") return;
+          console.log('保存成功');
+        });
+      };
+      //先转成ArrayBuffer 读取完成后再转成ArrayBuffer 先走完这个再走onload
+      reader.readAsArrayBuffer(blob);
+      recordedStream.value = [];
+    })
+  })
 }
-//开始录制
+//开始将屏幕内容映射到视频元素上
 async function startScreenRecording(sourceId) {
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
@@ -155,7 +175,6 @@ function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: nu
   } else {
     ctx.drawImage(video, 0, 0, width, height);
   }
-
   if (!mouseVisuali.value) return
   // 绘制鼠标特写
   ctx.beginPath();
@@ -164,6 +183,27 @@ function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: nu
   ctx.strokeStyle = 'red';
   ctx.stroke();
 }
+
+const startRecording = () => {
+  const mediaRecorder = new MediaRecorder(
+    stream
+  );
+  // 处理录制的数据块
+  mediaRecorder.ondataavailable = (event) => {
+    console.log(123);
+    if (event.data.size > 0) {
+      recordedStream.value.push(event.data);
+    }
+  };
+  mediaRecorder.onstart = () => {
+    console.log('开始录制');
+    const ctx = recordedCanvas.value!.getContext('2d');
+    ctx!.fillStyle = 'red';
+    ctx!.fillRect(50, 50, 100, 100);
+  }
+  mediaRecorder.start();
+};
+
 //监听窗口变化
 useEventListener(window, 'resize', () => {
   ratioScreen.height = nodeDivElement.value!.offsetHeight - 20

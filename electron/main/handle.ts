@@ -41,6 +41,10 @@ export class WindowManager {
     this.registerGetMousePosition()
     //置顶弹窗（解决区域选择问题）
     this.registerSetTop()
+    //开始录制局部屏幕
+    this.registerStartRecord()
+    //结束录制局部屏幕
+    this.registerEndRecord()
     //注册快捷键
     startRecordShortcut(this.onPopupTop.bind(this))
   }
@@ -294,6 +298,7 @@ export class WindowManager {
         // 监听从弹窗发送的消息 开始录制
         ipcMain.on('popup-start', (event, message) => {
           resolve(message)
+          this.popupWindow.setIgnoreMouseEvents(true, { forward: true })
         });
         //按esc退出弹窗
         globalShortcut.register('Esc', () => {
@@ -314,5 +319,29 @@ export class WindowManager {
   // 注册 onSetTopPopupGetPosition 事件监听
   private registerSetTop(): void {
     ipcMain.handle('onSetTopPopupGetPosition', this.onPopupTop.bind(this));
+  }
+
+  //开始录制
+  private async onStartRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
+    return await new Promise(async (resolve, reject) => {
+      ipcMain.on('popup-recording', (event, message) => {
+        resolve(message)
+      });
+    })
+  }
+  private registerStartRecord(): void {
+    ipcMain.handle('startRecord', this.onStartRecord.bind(this));
+  }
+
+  //结束录制
+  private async onEndRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
+    return await new Promise(async (resolve, reject) => {
+      ipcMain.on('popup-end', (event, message) => {
+        resolve(message)
+      });
+    })
+  }
+  private registerEndRecord(): void {
+    ipcMain.handle('endRecord', this.onEndRecord.bind(this));
   }
 }
