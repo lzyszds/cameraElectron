@@ -118,7 +118,7 @@ onMounted(() => {
       const ratio = selectResRatio.value.split('*')
       const { x, y } = await window.myElectron.getMousePosition()
       // 计算缩放比例
-      const scaleX = recordedCanvas.value!.width / Number(ratio[0]);
+      const scaleX = ratioScreen.height * 16 / 9 / Number(ratio[0]);
       const scaleY = recordedCanvas.value!.height / Number(ratio[1]);
 
       // 将鼠标坐标映射到录制视频分辨率上
@@ -141,7 +141,17 @@ function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: nu
   // 绘制视频帧
   if (isPositionRecord.value) {
     const { startX, startY, width: w, height: h } = positionRect.value
-    ctx.drawImage(video, startX, startY, w, h, 0, 0, w, h);
+    const dw = w > nodeDivElement.value!.offsetWidth ? nodeDivElement.value!.offsetWidth : w;
+    const dh = h > nodeDivElement.value!.offsetHeight ? nodeDivElement.value!.offsetHeight : h;
+
+    const ratio = Math.min(dw / w, dh / h); // 计算宽高比例
+
+    const destWidth = w * ratio;
+    const destHeight = h * ratio;
+
+    // 计算绘制的起始坐标，使视频居中
+    const destX = (width - destWidth) / 2;
+    ctx.drawImage(video, startX, startY, w, h, destX, 0, destWidth, destHeight);
   } else {
     ctx.drawImage(video, 0, 0, width, height);
   }
