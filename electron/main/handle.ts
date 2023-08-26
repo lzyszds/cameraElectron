@@ -290,10 +290,10 @@ export class WindowManager {
         this.popupWindow.setFullScreen(true);
         // 监听从弹窗发送的消息
         ipcMain.on('popup-close', (event, message) => {
+          globalShortcut.unregister('Esc');
           if (!this.popupWindow) return console.log('this.popupWindow is null')
           this.popupWindow.close();
           this.popupWindow = null
-          globalShortcut.unregister('Esc');
         });
         // 监听从弹窗发送的消息 开始录制
         ipcMain.on('popup-start', (event, message) => {
@@ -337,6 +337,7 @@ export class WindowManager {
   private async onEndRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
     return await new Promise(async (resolve, reject) => {
       ipcMain.on('popup-end', (event, message) => {
+        this.popupWindow.setIgnoreMouseEvents(false, { forward: false })
         resolve(message)
       });
     })

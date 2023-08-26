@@ -3,20 +3,21 @@ import { ElSelect, ElOption, ElLoading } from 'element-plus'
 import { reactive, ref, onMounted } from 'vue'
 import { setTimeoutAsync } from '@/utils/lzyutils'
 import { useEventListener } from '@vueuse/core'
-const recordedVideo = ref<HTMLVideoElement>()
-const recordedCanvas = ref<HTMLCanvasElement>()
-const nodeDivElement = ref<HTMLDivElement>()
+// 创建响应式数据
+const recordedVideo = ref<HTMLVideoElement>(); // 录制视频元素
+const recordedCanvas = ref<HTMLCanvasElement>(); // 录制画布元素
+const nodeDivElement = ref<HTMLDivElement>(); // 用于计算画布尺寸的 DIV 元素
 const ratioScreen = reactive({
   width: 0,
   height: 0,
   ratio: '16/9'
 })
-//视频流
-let stream;
-//录制时的视频流
-let recordedStream = ref<BlobPart[]>([]);
-//是否为区域录制
-let isPositionRecord = ref(false)
+
+// 其他数据和状态
+let stream; // 视频流
+const refMediaRecorder = ref<MediaRecorder>(); // 录制器
+const recordedStream = ref<BlobPart[]>([]); // 录制时的视频流数据块
+const isPositionRecord = ref(false); // 是否为区域录制
 
 //文档https://www.electronjs.org/docs/latest/api/desktop-capturer
 // 调用 Electron 主进程中的 onDesktopRecord 方法 来获取屏幕sourcesid
@@ -30,9 +31,9 @@ const getSourcesAndSet = async () => {
 }
 
 //全屏录制
-const toRecord = () => {
+const toRecord = async () => {
   isPositionRecord.value = false
-  getSourcesAndSet()
+  await getSourcesAndSet()
 }
 //区域录制所需参数
 const positionRect = ref({ startX: 0, startY: 0, width: 0, height: 0 })
@@ -40,27 +41,41 @@ const positionRect = ref({ startX: 0, startY: 0, width: 0, height: 0 })
 const toRecordArea = async () => {
   isPositionRecord.value = true
   positionRect.value = await window.myElectron.onSetTopPopupGetPosition()
-  getSourcesAndSet()
+  await getSourcesAndSet()
   window.myElectron.startRecord().then(() => {
     startRecording()
-    window.myElectron.endRecord().then(() => {
-      const blob = new Blob(recordedStream.value, { type: 'video/webm' });
-      const reader = new FileReader();
-      reader.onload = () => {
-        const arrayBuffer = reader.result;
-        // 发送 Blob 数据给主进程
-        window.myElectron.saveDeviceVideo({ arrayBuffer }).then((res) => {
-          if (res === "Error") return;
-          console.log('保存成功');
-        });
-      };
-      //先转成ArrayBuffer 读取完成后再转成ArrayBuffer 先走完这个再走onload
-      reader.readAsArrayBuffer(blob);
-      recordedStream.value = [];
+    window.myElectron.endRecord().then(async () => {
+      refMediaRecorder.value!.stop()
+      recordedVideo.value!.srcObject = null;
+      const loading = ElLoading.service({
+        lock: true,
+        text: 'Loading',
+        background: 'rgba(255, 255, 255, 0.9)',
+      })
+      await setTimeoutAsync(1000)
+      loading.close()
     })
   })
 }
-//开始将屏幕内容映射到视频元素上
+
+//将录制的视频流数据块保存为文件 （发送给myelectron保存）
+const saveRecordData = () => {
+  const blob = new Blob(recordedStream.value, { type: 'video/webm' });
+  const reader = new FileReader();
+  reader.onload = () => {
+    const arrayBuffer = reader.result;
+    // 发送 Blob 数据给主进程
+    window.myElectron.saveDeviceVideo({ arrayBuffer }).then((res) => {
+      if (res === "Error") return;
+      console.log('保存成功');
+    });
+  };
+  //先转成ArrayBuffer 读取完成后再转成ArrayBuffer 先走完这个再走onload
+  reader.readAsArrayBuffer(blob);
+  recordedStream.value = [];
+}
+
+//开始将屏幕内容映射到视频元素上  开始录制屏幕内容的函数
 async function startScreenRecording(sourceId) {
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
@@ -131,7 +146,7 @@ onMounted(() => {
   //为了让canvas的宽高跟body的宽高一样，不如会导致全屏的时候，canvas的宽高不够
   ratioScreen.height = nodeDivElement.value!.offsetHeight - 20
   ratioScreen.width = ratioScreen.height * 16 / 9
-
+  // 在视频播放时绘制视频帧和鼠标标记
   useEventListener(recordedVideo.value, 'play', async () => {
     const ctx = recordedCanvas.value!.getContext('2d')!;
     const renderVideoFrame = async () => {
@@ -184,24 +199,40 @@ function drawFrameWithMouseSpotlight(video, ctx: CanvasRenderingContext2D, x: nu
   ctx.stroke();
 }
 
+// 定义一个函数来开始录制
 const startRecording = () => {
-  const mediaRecorder = new MediaRecorder(
-    stream
-  );
-  // 处理录制的数据块
-  mediaRecorder.ondataavailable = (event) => {
-    console.log(123);
+  stream = !isPositionRecord.value ? stream : recordedCanvas.value!.captureStream()
+  // 创建一个 MediaRecorder 实例，传入录制的媒体流（stream）
+  refMediaRecorder.value = new MediaRecorder(stream);
+  // 处理录制的数据块的事件
+  refMediaRecorder.value.ondataavailable = (event) => {
+    console.log(123, event.data.size);
+    // 检查数据块的大小是否大于 0
     if (event.data.size > 0) {
+      // 将数据块添加到 recordedStream 数组中
       recordedStream.value.push(event.data);
     }
   };
-  mediaRecorder.onstart = () => {
+
+  // 在录制开始时触发的事件
+  refMediaRecorder.value.onstart = () => {
     console.log('开始录制');
+    // 获取 recordedCanvas 元素的 2D 绘图上下文
     const ctx = recordedCanvas.value!.getContext('2d');
+    // 设置绘图上下文的填充颜色为红色
     ctx!.fillStyle = 'red';
+    // 在绘图上下文中绘制一个红色的矩形（50, 50, 100, 100）
     ctx!.fillRect(50, 50, 100, 100);
-  }
-  mediaRecorder.start();
+  };
+
+  // 在录制结束时触发的事件
+  refMediaRecorder.value.onstop = () => {
+    console.log('录制结束');
+    // 将 recordedStream 数组中的数据块保存为文件
+    saveRecordData();
+  };
+  // 启动媒体录制
+  refMediaRecorder.value.start();
 };
 
 //监听窗口变化
