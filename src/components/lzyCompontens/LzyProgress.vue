@@ -99,7 +99,7 @@ const style = computed(() => {
 
   .lzy_level {
     appearance: none;
-    width: 180px;
+    width: 200px;
     height: 30px;
     background: var(--progressBackground);
     overflow: hidden;
@@ -122,6 +122,9 @@ const style = computed(() => {
       box-shadow: 1px 0px 0px 1px var(--progressSliderColor);
       /* 滑块阴影 */
       padding-left: 3px;
+    }
+    &:focus{
+      outline: none;
     }
   }
 

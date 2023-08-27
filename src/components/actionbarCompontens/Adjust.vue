@@ -70,14 +70,17 @@ const reset = () => {
 </script>
 
 <template>
-  <div class="">
+  <div class="parameter">
     <LzyProgress @paceValue="paceValue" v-for="(item, index) in fillCompontens" :key="index"
       :sliderColor="item.sliderColor" :value="state.fillterAgg[index]" :emitKey="index" :min="item.min" :max="item.max"
       :name="item.name">
     </LzyProgress>
-    <button class="btn text-xm gap-1" @click="reset">
-      <LzyIcon width="20" name="ph:arrows-counter-clockwise-duotone"></LzyIcon>重置
+    <button id="btn" class="btn mt-2 text-xm gap-1 leading-5" @click="reset">
+      <LzyIcon width="20" name="ph:arrows-counter-clockwise-duotone" style="vertical-align: bottom"></LzyIcon>重置
     </button>
+  </div>
+  <div class="handle mt-8">
+    <LzyProgress name="美颜" sliderColor="#4facfe" background="linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)" min="0" max="100" emitKey="0" value="0"></LzyProgress>
   </div>
 </template>
 

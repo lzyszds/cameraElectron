@@ -1,11 +1,14 @@
 import { ipcMain, dialog, nativeTheme, shell, BrowserWindow, clipboard, nativeImage, desktopCapturer, screen, globalShortcut } from 'electron';
 import type { App } from 'electron';
-import { join } from 'node:path'
 import fs from 'fs';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
 import { startRecordShortcut } from './keyboard'
 
 
+/**
+ * @export
+ * @class WindowManager
+ */
 export class WindowManager {
   private win: BrowserWindow;
   private app: App;
@@ -15,6 +18,13 @@ export class WindowManager {
   /* 弹窗窗口声明定义 */
   private popupWindow: BrowserWindow | null;
 
+  /**
+   * Creates an instance of WindowManager.
+   * @param {BrowserWindow} win
+   * @param {App} app
+   * @param {BrowserWindow} mainWindow
+   * @memberof WindowManager
+   */
   constructor(win: BrowserWindow, app: App, mainWindow: BrowserWindow) {
     this.win = win;
     this.app = app;
@@ -35,18 +45,10 @@ export class WindowManager {
     this.registerOpenFile();
     // 复制文件进剪切板
     this.registerCopyFile()
-    // 录制桌面
-    this.registerDesktopRecord()
     //获取鼠标位置
     this.registerGetMousePosition()
-    //置顶弹窗（解决区域选择问题）
-    this.registerSetTop()
-    //开始录制局部屏幕
-    this.registerStartRecord()
-    //结束录制局部屏幕
-    this.registerEndRecord()
     //注册快捷键
-    startRecordShortcut(this.onPopupTop.bind(this))
+    // startRecordShortcut(this.onPopupTop.bind(this))
   }
 
   // 处理窗口操作请求
@@ -239,16 +241,7 @@ export class WindowManager {
   private registerCopyFile(): void {
     ipcMain.handle('onCopyFile', this.onCopyFile.bind(this));
   }
-  //录制桌面屏幕
-  private async onDesktopRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
-    this.isRecording = true;
-    const sources = await desktopCapturer.getSources({ types: ['screen'] });
-    return sources[0].id
-  }
-  // 注册 onDesktopRecord 事件监听
-  private registerDesktopRecord(): void {
-    ipcMain.handle('onDesktopRecord', this.onDesktopRecord.bind(this));
-  }
+
   //获取鼠标位置
   private async onGetMousePosition(event: Electron.IpcMainInvokeEvent, arg: any) {
     return screen.getCursorScreenPoint()
@@ -256,93 +249,5 @@ export class WindowManager {
   // 注册 onGetMousePosition 事件监听
   private registerGetMousePosition(): void {
     ipcMain.handle('getMousePosition', this.onGetMousePosition.bind(this));
-  }
-  //popup置顶弹窗
-  private async onPopupTop(event: Electron.IpcMainInvokeEvent, arg: any) {
-    return await new Promise(async (resolve, reject) => {
-      if (!this.popupWindow) {
-        this.popupWindow = new BrowserWindow({
-          width: screen.getPrimaryDisplay().size.width,
-          height: screen.getPrimaryDisplay().size.height,
-          alwaysOnTop: true, // 设置为置顶
-          frame: false, // 隐藏窗口边框
-          parent: this.mainWindow, // 设置父窗口
-          // modal: false, // 阻止与弹窗之外的内容交互
-          focusable: false, // 设置为不可聚焦
-          useContentSize: true, // 使用内容大小，而不是整体窗口大小
-          titleBarStyle: 'hidden', // 隐藏标题栏
-          transparent: true, // 设置透明
-          resizable: false,//禁止调整大小
-          webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-          },
-        });
-        const drawHtml = join(process.env.DIST, '../draw.html')
-
-        this.popupWindow.loadFile(drawHtml);
-        // this.popupWindow.webContents.openDevTools();
-        /*
-          如果你希望将窗口显示在任务栏上方，即将任务栏区域覆盖，
-          可以使用 Electron 的 win.setAlwaysOnTop() 方法。
-          这将使你的窗口在屏幕上显示在最顶层，包括在任务栏之上。 
-        */
-        this.popupWindow.setFullScreen(true);
-        // 监听从弹窗发送的消息
-        ipcMain.on('popup-close', (event, message) => {
-          globalShortcut.unregister('Esc');
-          if (!this.popupWindow) return console.log('this.popupWindow is null')
-          this.popupWindow.close();
-          this.popupWindow = null
-        });
-        // 监听从弹窗发送的消息 开始录制
-        ipcMain.on('popup-start', (event, message) => {
-          resolve(message)
-          this.popupWindow.setIgnoreMouseEvents(true, { forward: true })
-        });
-        //按esc退出弹窗
-        globalShortcut.register('Esc', () => {
-          if (!this.popupWindow) return console.log('this.popupWindow is null')
-          this.popupWindow.close();
-          this.popupWindow = null
-          globalShortcut.unregister('Esc');
-        })
-
-      } else {
-        this.popupWindow.close();
-        globalShortcut.unregister('Esc');
-        return this.popupWindow = null
-      }
-
-    })
-  }
-  // 注册 onSetTopPopupGetPosition 事件监听
-  private registerSetTop(): void {
-    ipcMain.handle('onSetTopPopupGetPosition', this.onPopupTop.bind(this));
-  }
-
-  //开始录制
-  private async onStartRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
-    return await new Promise(async (resolve, reject) => {
-      ipcMain.on('popup-recording', (event, message) => {
-        resolve(message)
-      });
-    })
-  }
-  private registerStartRecord(): void {
-    ipcMain.handle('startRecord', this.onStartRecord.bind(this));
-  }
-
-  //结束录制
-  private async onEndRecord(event: Electron.IpcMainInvokeEvent, arg: any) {
-    return await new Promise(async (resolve, reject) => {
-      ipcMain.on('popup-end', (event, message) => {
-        this.popupWindow.setIgnoreMouseEvents(false, { forward: false })
-        resolve(message)
-      });
-    })
-  }
-  private registerEndRecord(): void {
-    ipcMain.handle('endRecord', this.onEndRecord.bind(this));
   }
 }

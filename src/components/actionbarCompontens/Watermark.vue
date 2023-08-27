@@ -4,7 +4,7 @@
 
 <template>
     <div>
-        graffiti
+        水印
     </div>
 </template>
 

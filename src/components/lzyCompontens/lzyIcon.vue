@@ -26,7 +26,7 @@ const handleClick = (event) => {
 </script>
 
 <template>
-  <span class="lzyIcon" :class="props.tipPosition ?? 'top'" @click="handleClick" :data-tip="props.tip" style="">
+  <span class="lzyIcon" :class="props.tipPosition ?? 'top'" @click="handleClick" :data-tip="props.tip">
     <Icon :icon="name" :width="width" :height="height" align="verticalAlign" :inline="true" :style="props.style">
     </Icon>
   </span>

@@ -5,13 +5,9 @@ import Filters from "@/components/actionbarCompontens/Filters.vue";
 import Effects from "@/components/actionbarCompontens/Effects.vue";
 import Text from "@/components/actionbarCompontens/Text.vue";
 import Sticker from "@/components/actionbarCompontens/Sticker.vue";
-import Crop from "@/components/actionbarCompontens/Crop.vue";
+import watermark from "@/components/actionbarCompontens/Watermark.vue";
 import Rotate from "@/components/actionbarCompontens/Rotate.vue";
-import Blur from "@/components/actionbarCompontens/Blur.vue";
-import Beauty from "@/components/actionbarCompontens/Beauty.vue";
 import Frame from "@/components/actionbarCompontens/Frame.vue";
-import Mosaic from "@/components/actionbarCompontens/Mosaic.vue";
-import Graffiti from "@/components/actionbarCompontens/Graffiti.vue";
 const props = defineProps<{ activeTool: string }>();
 const componentsItems = {
   adjust: Adjust,
@@ -20,13 +16,9 @@ const componentsItems = {
   effects: Effects,
   text: Text,
   sticker: Sticker,
-  crop: Crop,
+  watermark: watermark,
   rotate: Rotate,
-  blur: Blur,
-  beauty: Beauty,
   frame: Frame,
-  mosaic: Mosaic,
-  graffiti: Graffiti,
 };
 </script>
 

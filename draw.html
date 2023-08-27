@@ -126,6 +126,8 @@
       if (count === 0) {
         clearInterval(timer);
         document.querySelector('.timing').style.display = 'none';
+        document.querySelector('.timing').innerHTML = count;
+
         setTimeout(() => {
           document.querySelector('#endBtn').click();
         }, 10000)

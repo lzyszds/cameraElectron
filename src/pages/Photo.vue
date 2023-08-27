@@ -43,6 +43,7 @@ const canvasFaceContour = ref<HTMLCanvasElement | null>(null);
 
 // 初始化摄像头
 const initCamera = async () => {
+  // 设置媒体流的约束
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
     if (videoElement.value) {

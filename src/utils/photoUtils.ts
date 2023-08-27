@@ -34,25 +34,16 @@ export const siderbar: Siderbar[] = [
     icon: "mdi:sticker-emoji",
   },
   {
-    title: "裁剪",
-    name: "crop",
-    icon: "mdi:crop",
+    title: "水印",
+    name: "watermark",
+    icon: "material-symbols:branding-watermark-outline-rounded",
   },
   {
     title: "旋转",
     name: "rotate",
     icon: "mdi:rotate-3d",
   },
-  {
-    name: "模糊",
-    title: "blur",
-    icon: "mdi:blur",
-  },
-  {
-    title: "美颜",
-    name: "beauty",
-    icon: "mdi:face",
-  },
+
   {
     title: "画框",
     name: "frame",
