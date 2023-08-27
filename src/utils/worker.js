@@ -1,3 +1,10 @@
+//黑白滤镜
+// const r = data[i] >= 80 && data[i] <= 200 ? 0 : 255;
+// data[i] = r;
+// data[i + 1] = r;
+// data[i + 2] = r;
+
+
 // 在 worker.js 文件中进行图像处理
 // 处理滤镜问题，在主渲染进程中进行滤镜计算会导致页面其他功能卡顿
 // 十分影响用户体验，所以我将滤镜计算放到 Web Worker 中进行
@@ -5,37 +12,37 @@ onmessage = (event) => {
   const imageData = event.data.imageData;
   const data = imageData.data;
   // event.data.params.hue = event.data.params.hue / 360;
-  const params = event.data.params;
-  params.contrast /= 100;
-  params.brightness /= 100;
-  params.saturation /= 100;
-  params.hue /= 100;
+  const fillterAgg = event.data.fillterAgg;
+  const beautyAgg = event.data.beautyAgg;
+  // 将参数转换为百分比
+  fillterAgg.contrast /= 100;
+  fillterAgg.brightness /= 100;
+  // fillterAgg.saturation /= 100;
+  fillterAgg.hue /= 100;
   // 处理图像数据，这里使用你之前定义的 change_per_pix 函数
   for (let i = 0; i < data.length; i += 4) {
-    change_per_pix(params, data, i);
-    //黑白滤镜
-    // const r = data[i] >= 80 && data[i] <= 200 ? 0 : 255;
-    // data[i] = r;
-    // data[i + 1] = r;
-    // data[i + 2] = r;
+    //色调调整
+    changeTone(fillterAgg, data, i);
+    //美颜设置
+    changeBeauty(beautyAgg, data, i);
   }
+
   // 处理对比度
-  if (params.contrast && params.contrast != 0) {
+  if (fillterAgg.contrast && fillterAgg.contrast != 0) {
     const avg = getGrayAverage(data);
-    makeContrast(data, avg, params.contrast * 255);
-    // applyCartoonFilter(data, params);
+    makeContrast(data, avg, fillterAgg.contrast * 255);
   }
   // 返回处理后的图像数据
   postMessage(imageData);
 };
 
 /**
- *  更直观的颜色描述： HSL代表色相（Hue）、饱和度（Saturation）和亮度（Lightness）
+ * 更直观的颜色描述： HSL代表色相（Hue）、饱和度（Saturation）和亮度（Lightness）
  * 这使得颜色的描述更加直观
  * 与RGB相比，HSL更接近人类对颜色的感知
  * 使得调整颜色变得更加直观和易于理解
  */
-function change_per_pix(param, dataArray, offset) {
+function changeTone(param, dataArray, offset) {
   // 从 RGB 转换为 HLS
   const r = dataArray[offset];
   const g = dataArray[offset + 1];
@@ -48,48 +55,43 @@ function change_per_pix(param, dataArray, offset) {
 
   const hsl = rgbToHsl(from);
 
-  // 处理色度
+  // 处理色调
   if (param.hue && param.hue !== 0) {
-    // 色度的区间 [-0.5, 0.5]
-    const delta = param.hue * 200;
-    let hue = hsl[0] + delta;
-    hue = Math.max(0, Math.min(200, hue));
+    // 色调的区间 [0, 360]
+    const hueOffset = param.hue * 360; // 将百分比转化为 [-180, 180] 的角度偏移
+    let hue = hsl[0] + hueOffset;
     hsl[0] = hue;
   }
 
   // 处理饱和度
   if (param.saturation && param.saturation !== 0) {
     // 饱和度的区间 [-0.5, 0.5]
-    const delta = param.saturation * 40;
-    let saturation = hsl[1] + delta;
-    saturation = Math.max(0, Math.min(40, saturation));
+    const delta = param.saturation;
+    // 将百分比转化为 [0, 100] 的饱和度
+    let saturation = hsl[1] + delta
     hsl[1] = saturation;
   }
 
   // 处理亮度
   if (param.brightness && param.brightness !== 0) {
     // 亮度的区间 [-0.5, 0.5]
-    const delta = param.brightness * 100;
+    const delta = param.brightness
     let brightness = hsl[2] + delta;
-    brightness = Math.max(0, Math.min(100, brightness));
     hsl[2] = brightness;
   }
 
   // 从 HLS 转换回 RGB
   const newColor = hslToRgb(hsl);
+  // if (offset % 10000 == 0) {
+  //   console.log( hsl, newColor);
+  // }
   dataArray[offset] = newColor[0];
   dataArray[offset + 1] = newColor[1];
   dataArray[offset + 2] = newColor[2];
 }
 
 //卡通滤镜
-function applyCartoonFilter(dataArray, params) {
-  const avg = getGrayAverage(dataArray);
-
-  if (params.contrast && params.contrast != 0) {
-    makeContrast(dataArray, avg, params.contrast * 255);
-  }
-
+function applyCartoonFilter(dataArray) {
   for (let i = 0; i < dataArray.length; i += 4) {
     const r = dataArray[i];
     const g = dataArray[i + 1];
@@ -163,6 +165,11 @@ function makeContrast(dataArray, average, contrast) {
     dataArray[pixOffset + 1] = newG;
     dataArray[pixOffset + 2] = newB;
   }
+}
+
+function changeBeauty(dataArray, beautyAgg) {
+
+
 }
 
 // RGB to HSL conversion

@@ -7,10 +7,11 @@ state.fillterAgg = {
   brightness: 0 as number,
   saturation: 0 as number,
   hue: 0 as number,
-  r: 0 as number,
-  g: 0 as number,
-  b: 0 as number,
 };
+state.beautyAgg = {
+  beauty: 0 as number,
+  blur: 0 as number,
+}
 const fillCompontens = {
   contrast: {
     name: "对比度",
@@ -35,24 +36,6 @@ const fillCompontens = {
     min: -30,
     max: 30,
     sliderColor: 'white'
-  },
-  r: {
-    name: "R",
-    min: 0,
-    max: 255,
-    sliderColor: 'red'
-  },
-  g: {
-    name: "G",
-    min: 0,
-    max: 255,
-    sliderColor: 'green'
-  },
-  b: {
-    name: "B",
-    min: 0,
-    max: 255,
-    sliderColor: 'blue'
   },
 };
 
@@ -80,7 +63,11 @@ const reset = () => {
     </button>
   </div>
   <div class="handle mt-8">
-    <LzyProgress name="美颜" sliderColor="#4facfe" background="linear-gradient(to right, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)" min="0" max="100" emitKey="0" value="0"></LzyProgress>
+    <LzyProgress name="美颜" sliderColor="#4facfe"
+      background="linear-gradient(to left, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)" textColor="#000" :min="0" :max="100"
+      emitKey="0" :value="state.beautyAgg.beauty"></LzyProgress>
+    <LzyProgress name="虚化" sliderColor="#4facfe" background="linear-gradient(to right, #6a85b6 0%, #bac8e0 100%)" :min="0"
+      :max="100" emitKey="0" :value="state.beautyAgg.blur"></LzyProgress>
   </div>
 </template>
 

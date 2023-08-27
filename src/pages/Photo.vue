@@ -80,7 +80,6 @@ const initCamera = async () => {
 
           ctx.clearRect(0, 0, width, height);
 
-
           state.handleEffects(landmarks, faceContour, ctx, faceWidthToHeightRatio)
           // draw.drawContour(ctx, landmarks.positions);
           //在边框
@@ -90,7 +89,7 @@ const initCamera = async () => {
           //表情识别
           // draw.drawFaceExpressions(faceContour, resizedDetections);
           //岁数和性别
-        }, 60);
+        }, 90);
 
       } catch (error) {
         console.error("模型加载失败：", error);
@@ -151,19 +150,22 @@ const renderToCanvas = async () => {
   offscreenContext.drawImage(canvasFaceContour.value!, 0, 0, newWidth, newHeight);
   // 获取 OffscreenCanvas 图像数据
   const imageData = offscreenContext.getImageData(0, 0, newWidth, newHeight);
-
-  // 调整亮度、对比度和颜色通道
-  let { contrast, brightness, saturation, hue } = state.fillterAgg;
-  contrast = contrast / 100;
-  brightness = brightness / 100;
-  saturation = saturation / 100;
-  hue = hue / 100;
-
+  const { contrast, brightness, saturation, hue, r, g, b } = state.fillterAgg
+  const { beauty, blur } = state.beautyAgg
+  /**
+   * 将滤镜参数传递给worker,让worker进行滤镜处理
+   * 为什么要解构出来再传进去，因为worker里面不能直接使用state里面的数据
+   * @param {ImageData} imageData 图像数据
+   * @param {string} barSelect 选中的功能项
+   * @param {object} fillterAgg 滤镜参数
+   * @param {object} beautyAgg 美颜参数
+   */
   worker.postMessage({
     imageData: imageData,
-    params: { hue, saturation, brightness, contrast },
+    fillterAgg: { contrast, brightness, saturation, hue, r, g, b },
+    beautyAgg: { beauty, blur }
   });
-
+  // 接收 worker 处理后的图像数据
   worker.onmessage = (event) => {
     // 获取处理后的图像数据
     const processedImageData = event.data;
@@ -176,8 +178,6 @@ const renderToCanvas = async () => {
     requestAnimationFrame(renderToCanvas);
   };
 };
-
-
 
 
 //背景透明

@@ -3,15 +3,8 @@ export interface FillterAgg {
   brightness: number,
   saturation: number,
   hue: number,
-  r: number,
-  g: number,
-  b: number
-  // saturation: number,
-  // hue: number,
-  // blur: number,
-  // sharpen: number,
-  // noise: number,
-  // pixelate: number,
-  // gamma: number,
-  // invert: number,
+}
+export interface Beautyagg {
+  beauty: number,
+  blur: number,
 }

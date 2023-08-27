@@ -1,18 +1,25 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import { FillterAgg } from '@/pages/PhotoType'
+import { FillterAgg, Beautyagg } from '@/pages/PhotoType'
 import specialEffects from '@/utils/specialEffects'
 
 // import dayjs from 'dayjs'
 export const useStore = defineStore('counter', () => {
   const actionToolsValue = ref<string>('')  // 用于存储当前操作的工具
   const fillterAgg = reactive({}) as FillterAgg //滤镜参数值集合
+  const beautyAgg = reactive({}) as Beautyagg //美颜和虚化参数值集合
   const ratioVideoData = ref<string>('4:3') //视频比例
   const effectsData = ref<string>('') //特效数据
   const setActionToolsValue = (val: string,) => {
     actionToolsValue.value = val
   }
-
+  /**
+   * 处理人脸特效
+   * @param {*} landmarks
+   * @param {*} faceContour
+   * @param {*} ctx
+   * @param {*} sizeMulitple
+   */
   const handleEffects = (landmarks, faceContour, ctx, sizeMulitple) => {
     switch (effectsData.value) {
       case 'theForeheadFont':
@@ -55,9 +62,10 @@ export const useStore = defineStore('counter', () => {
   return {
     actionToolsValue,
     fillterAgg,
+    beautyAgg,
     setActionToolsValue,
     ratioVideoData,
     effectsData,
-    handleEffects
+    handleEffects,
   }
 })

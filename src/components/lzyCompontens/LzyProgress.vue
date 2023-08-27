@@ -11,6 +11,7 @@ interface Props {
   max?: number; //最大值
   background?: string; //背景色
   sliderColor?: string;//滑块色
+  textColor: string;//文字颜色
 }
 const props = defineProps({
   value: {
@@ -41,6 +42,10 @@ const props = defineProps({
     type: String,
     default: "rgb(255, 255, 255)",
   },
+  textColor: {
+    type: String,
+    default: "rgb(255, 255, 255)",
+  },
 }) as Props;
 const emits = defineEmits<Emit>();
 const handlePace = () => {
@@ -57,16 +62,16 @@ watch(
 const style = computed(() => {
   return {
     "--progressBackground": props.background,
-    "--progressSliderColor": props.sliderColor ,
+    "--progressSliderColor": props.sliderColor,
+    "--progressTextColor": props.textColor,
   };
 });
 </script>
 
 <template>
-  <label class="lzy_slider">
-    <span>{{ name }}</span>
-    <input @input="handlePace" :style="style" v-model="pace" :min="props.min" :max="props.max" type="range"
-      class="lzy_level" />
+  <label class="lzy_slider" :style="style">
+    <span style="">{{ name }}</span>
+    <input @input="handlePace" v-model="pace" :min="props.min" :max="props.max" type="range" class="lzy_level" />
     <input type="number" :min="props.min" :max="props.max" v-model="pace" />
   </label>
 </template>
@@ -89,7 +94,7 @@ const style = computed(() => {
     left: 5px;
     bottom: 5px;
     z-index: 1;
-    color: #ffffff;
+    color: var(--progressTextColor);
     font-size: 12px;
     font-family: "dindin";
     font-weight: 600;
@@ -123,7 +128,8 @@ const style = computed(() => {
       /* 滑块阴影 */
       padding-left: 3px;
     }
-    &:focus{
+
+    &:focus {
       outline: none;
     }
   }
@@ -139,6 +145,7 @@ const style = computed(() => {
     font-size: 12px;
     margin-left: 5px;
     user-select: none !important;
+
     &::-webkit-inner-spin-button,
     &::-webkit-outer-spin-button {
       display: none;
