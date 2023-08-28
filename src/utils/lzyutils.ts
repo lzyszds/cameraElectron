@@ -191,6 +191,7 @@ export const imageLoader = new ImageLoader();
 
 
 /** 
+  * 发送系统通知，win通知这种 
   * window.Notification
   * options：一个包含其他通知参数的对象，可以用来设置通知的其他属性，如下面的参数：
   * body (正文)：通知的主要内容或消息体，通常显示在标题下面。
@@ -250,18 +251,6 @@ export function unique<T>(arr: T[], key?: string): T[] {
 export function setTime(time: string | number): string {
   const formatted = dayjs(time).format('YYYY-MM-DD');
   return formatted;
-}
-
-interface RGBColor {
-  r: number;
-  g: number;
-  b: number;
-}
-
-interface HSLColor {
-  h: number; // 色相，取值范围为[0, 360]
-  s: number; // 饱和度，取值范围为[0, 100]
-  l: number; // 亮度，取值范围为[0, 100]
 }
 
 // RGB 转 HSL
@@ -337,6 +326,55 @@ export function setTimeoutAsync(delay: number) {
   });
 }
 
+/**
+ * 创建一个具有防抖功能的自定义 Vue 响应式引用。
+ *
+ * @template T - 引用值的类型
+ * @param {T} value - 初始值
+ * @param {number} duration - 防抖延迟时间（以毫秒为单位），默认为 1000 毫秒
+ * @returns {{
+ *   get(): T,
+ *   set(val: T): void
+ * }} 具有防抖功能的自定义响应式引用对象
+ *
+ * @example
+ * // 创建一个具有防抖功能的响应式引用，延迟时间为 500 毫秒
+ * const debouncedValue = debounceRef('', 500); 用法跟ref一样只是后面多了一个时间
+ * // 获取引用值
+ * const currentValue = debouncedValue.value;
+ * // 更新引用值（在 500 毫秒内不会触发更新，直到延迟结束）
+ * debouncedValue.value = newValue;
+ */
+import { customRef } from 'vue'
+export function debounceRef<T>(value: T, duration: number = 1000) {
+  let timer
+  return customRef((track, trigger) => {
+    return {
+      get() {
+        track();
+        return value;
+      },
+      set(val) {
+        timer.clearTimeout();
+        timer = setTimeout(() => {
+          trigger()
+          value = val
+        }, duration)
+      }
+    }
+  })
+}
+/**
+ * 检测资源变化 如果系统更新了资源，就重新加载页面，提示用户 
+ */
+export async function watchResourceChange(duration: number = 1000) {
+  const res = await fetch('/?_timerstamp=' + dayjs().unix())
+  const text = await res.text()
+  const scriptSrcRegex = /<script\b[^<]*\bsrc=["']([^"']+)["'][^<]*<\/script>/gi;
+  const matches = text.match(scriptSrcRegex);
+  const scriptUrls = matches?.map((match) => match.replace(scriptSrcRegex, '$1'));
+  console.log(scriptUrls);
+}
 
 
 export default {
@@ -358,5 +396,7 @@ export default {
   hslToRgb,
   windowTipiver,
   imageLoader,
-  setTimeoutAsync
+  setTimeoutAsync,
+  debounceRef,
+  watchResourceChange
 };

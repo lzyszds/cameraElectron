@@ -7,7 +7,7 @@ import { useEventListener, useStorage } from "@vueuse/core";
 
 import { ElNotification } from "element-plus";
 import { useStore } from "@/store/store";
-import { formatDuration } from "@/utils/lzyutils";
+import { formatDuration,watchResourceChange } from "@/utils/lzyutils";
 
 import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
@@ -21,6 +21,8 @@ import {
   draw,
   matchDimensions
 } from "face-api.js";
+
+await watchResourceChange()
 
 const state = useStore();
 
