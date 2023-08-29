@@ -168,8 +168,6 @@ contextBridge.exposeInMainWorld(
 )
 ```
 
-
-
 在vue中使用这种形式接收或者发出，我是通过val值来判断当前是需要什么功能
 
 ```ts	
