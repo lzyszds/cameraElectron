@@ -26,6 +26,7 @@ await watchResourceChange()
 
 const state = useStore();
 
+
 provide("RenderView", siderbar);
 
 const mediaParas = reactive<MediaparasType>({
