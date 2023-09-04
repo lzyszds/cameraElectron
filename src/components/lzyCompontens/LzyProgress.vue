@@ -50,6 +50,7 @@ const props = defineProps({
 const emits = defineEmits<Emit>();
 const handlePace = () => {
   emits("paceValue", { [props.emitKey]: pace.value });
+  emits("beautyValue", { [props.emitKey]: pace.value });
 };
 //-100 0 100正常值
 const pace = ref<number>(props.value!);

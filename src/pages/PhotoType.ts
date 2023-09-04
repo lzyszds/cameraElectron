@@ -1,6 +1,6 @@
 export interface FillterAgg {
   contrast: number,
-  brightness: number,
+  light: number,
   saturation: number,
   hue: number,
 }

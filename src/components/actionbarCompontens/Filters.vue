@@ -1,5 +1,8 @@
 <script setup lang='ts'>
+import { useStore } from '@/store/store'
+
 const arr = [
+    { name: '初始参数', icon: 'init', title: '初始参数', image: '' },
     { name: '灰度化', icon: 'gray', title: '灰度化', image: '' },
     { name: '反转', icon: 'reverse', title: '反转', image: '' },
     { name: '马赛克', icon: 'mosaic', title: '马赛克', image: '' },
@@ -11,51 +14,20 @@ const arr = [
     { name: '膨胀', icon: 'dilate', title: '膨胀', image: '' },
     { name: '腐蚀', icon: 'erode', title: '腐蚀', image: '' },
 ]
+const state = useStore()
 const applyFilter = (filterName) => {
-    switch (filterName) {
-        case '灰度化':
-            // 实现灰度化滤镜
-            break;
-        case '反转':
-            // 实现反转滤镜
-            break;
-        case '马赛克':
-            // 实现马赛克滤镜
-            break;
-        case '边缘检测':
-            // 实现边缘检测滤镜
-            break;
-        case '中值滤波':
-            // 实现中值滤波滤镜
-            break;
-        case '高斯模糊':
-            // 实现高斯模糊滤镜
-            break;
-        case '色彩增强':
-            // 实现色彩增强滤镜
-            break;
-        case '像素化':
-            // 实现像素化滤镜
-            break;
-        case '膨胀':
-            // 实现膨胀滤镜
-            break;
-        case '腐蚀':
-            // 实现腐蚀滤镜
-            break;
-        default:
-            console.error('Unknown filter:', filterName);
-    }
+    state.activeFilterValue = filterName
 }
 </script>
 
 <template>
-    <div v-for="(item, index) in arr" :key="index" @click="applyFilter(item.name)">
-        <div class="actionItemCard cursor-pointer hover:scale-110">
-            <div class="ratioItem  grid grid-cols-[80px_1fr]">
-                <div class="flex gap-2">
+    <div class="grid grid-cols-2 gap-2">
+        <div v-for="(item, index) in arr" :key="index" @click="applyFilter(item.name)">
+            <div class="actionItemCard cursor-pointer border-2 border-transparent hover:border-black "
+                :class="state.activeFilterValue === item.title ? 'border-black' : ''">
+                <!-- <div class="flex gap-2">
                     <LzyIcon :name="item.icon"></LzyIcon>
-                </div>
+                </div> -->
                 <span>{{ item.title }}</span>
             </div>
         </div>

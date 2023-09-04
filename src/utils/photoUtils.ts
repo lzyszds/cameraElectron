@@ -1,5 +1,6 @@
 import { Siderbar } from "@/typing/SideBarType";
 import { rgbToHsl, hslToRgb } from "@/utils/lzyutils";
+import axios from 'axios'
 
 //左侧工具栏列表json
 export const siderbar: Siderbar[] = [
@@ -97,7 +98,7 @@ export function getGrayAverage(imagePixArray) {
 
 /**
  * 对每个像素点进行颜色调整
- * @param {Object} param - 包含 hue, saturation 和 brightness 调整参数的对象
+ * @param {Object} param - 包含 hue, saturation 和 light 调整参数的对象
  * @param {Uint8ClampedArray} dataArray - 视频帧数据，通常是一个 Uint8ClampedArray 类型
  * @param {number} offset - 当前像素点在 dataArray 中的偏移量，通常是每个像素由 RGBA 四个通道组成，所以 offset 表示 R 通道的索引
  */
@@ -133,12 +134,12 @@ export function change_per_pix(param, dataArray, offset) {
   }
 
   // 处理亮度
-  if (param.brightness && param.brightness !== 0) {
+  if (param.light && param.light !== 0) {
     // 亮度的区间 [-0.5, 0.5]
-    const delta = param.brightness * 100;
-    let brightness = hsl[2] + delta;
-    brightness = Math.max(0, Math.min(100, brightness));
-    hsl[2] = brightness;
+    const delta = param.light * 100;
+    let light = hsl[2] + delta;
+    light = Math.max(0, Math.min(100, light));
+    hsl[2] = light;
   }
 
   // 从 HLS 转换回 RGB
@@ -170,12 +171,113 @@ export function makeContrast(dataArray, average, contrast) {
   }
 }
 
+function mix(x, y, b) {
+  const a = b - Math.floor(b);
+  return Math.floor((x * (1 - a) + y * a) * 255);
+}
+//据点查询table的值
+export function lut3d(targetColor, table, lut3dSize) {
+  const [r, g, b] = targetColor || [];
+
+  const tr = r / 255;
+  const tg = g / 255;
+  const tb = b / 255;
+
+  // 计算最大索引值
+  const n = lut3dSize - 1;
+  // 计算blue索引
+  const b_index = tb * n;
+  // 计算red索引
+  const r_index = Math.floor(tr * n);
+  // 计算green索引
+  const g_index = Math.floor(tg * n);
+
+  // 计算blue的离散索引
+  const b_floor_idx = Math.floor(b_index);
+  const b_ceil_idx = Math.ceil(b_index);
+
+  // 找到blue所在的位置
+  const b_ceil = table[b_ceil_idx];
+  const b_floor = table[b_floor_idx];
+
+  // 找到green所在的位置
+  const g_ceil = b_ceil[g_index];
+  const g_floor = b_floor[g_index];
+
+  // 找到red所在的位置， red对应的点，为将要替换的rgb目标数据
+  const r_ceil = g_ceil[r_index];
+  const r_floor = g_floor[r_index];
+
+  return [
+    mix(r_ceil[0], r_floor[0], tb),
+    mix(r_ceil[1], r_floor[1], tb),
+    mix(r_ceil[2], r_floor[2], tb),
+  ]
+}
+//解析cube文件
+export function getTable(url) {
+  return axios(url, {
+    method: 'GET',
+  })
+    .then(res => {
+      const tableString = res.data;
+      // 按行分割字符串
+      const tempArr = tableString.split('\n');
+      let lut_3d_size = 0;
+      let start = -1;
+
+      const table: any = [], resTable: any = []
+
+      for (let i = 0; i < tempArr.length; i++) {
+        const str = tempArr[i];
+        // 获取采样数量
+        if (str.includes('LUT_3D_SIZE')) {
+          lut_3d_size = +str.replace('LUT_3D_SIZE', '');
+          continue;
+        }
+
+        // 将空节点与文件头过滤掉
+        if (!str || /[a-z]/i.test(str)) continue;
+
+        // 得到色彩数据开始的索引
+        if (start === -1) {
+          start = i;
+        }
+
+        // 计算色彩数据真实的索引
+        const idx = i - start;
+
+        // 分割rgb的值
+        const pixel = str.split(' ').map(s => Number(s));
+
+        // 根据table的排列规律，创建二维数组(33 * 33 * 33),这里我们根据从文件中实际获取到的采样数来计算
+        if (!table[Math.floor(idx / lut_3d_size)]) table[Math.floor(idx / lut_3d_size)] = [];
+        table[Math.floor(idx / lut_3d_size)].push(pixel);
+      }
+
+      for (let idx = 0; idx < table.length; idx++) {
+        const piece = table[idx];
+        if (!resTable[Math.floor(idx / lut_3d_size)]) resTable[Math.floor(idx / lut_3d_size)] = [];
+        resTable[Math.floor(idx / lut_3d_size)].push(piece);
+      }
+
+      return {
+        table: resTable,
+        size: lut_3d_size
+      }
+
+    })
+    .catch(err => {
+      console.error(err)
+    })
+}
 
 export default {
   siderbar,
   resizeRatio,
   getGrayAverage,
   change_per_pix,
-  makeContrast
+  makeContrast,
+  lut3d
 
 }

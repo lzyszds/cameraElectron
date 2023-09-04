@@ -10,6 +10,7 @@ export const useStore = defineStore('counter', () => {
   const beautyAgg = reactive({}) as Beautyagg //美颜和虚化参数值集合
   const ratioVideoData = ref<string>('4:3') //视频比例
   const effectsData = ref<string>('') //特效数据
+  const activeFilterValue = ref<string>('初始参数') //当前选中的滤镜值
   const setActionToolsValue = (val: string,) => {
     actionToolsValue.value = val
   }
@@ -67,5 +68,6 @@ export const useStore = defineStore('counter', () => {
     ratioVideoData,
     effectsData,
     handleEffects,
+    activeFilterValue
   }
 })

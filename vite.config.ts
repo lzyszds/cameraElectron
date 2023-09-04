@@ -5,6 +5,7 @@ import electron from 'vite-plugin-electron'
 import renderer from 'vite-plugin-electron-renderer'
 import pkg from './package.json'
 import path from 'path'
+import AutoImport from 'unplugin-auto-import/vite'
 
 
 /* 给electron的中自定义api名绑定，不然编辑器会报错找不到
@@ -27,6 +28,9 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [
       vue(),
+      AutoImport({
+        imports: ['vue', 'vue-router', '@vueuse/core', 'pinia']
+      }),
       electron([
         {
           // Main-Process entry file of the Electron App.

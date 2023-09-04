@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
-import { nextTick, provide, ref, onBeforeUnmount, reactive, computed } from "vue";
 import type { Ref } from "vue";
 import { useEventListener, useStorage } from "@vueuse/core";
 
 import { ElNotification } from "element-plus";
 import { useStore } from "@/store/store";
-import { formatDuration,watchResourceChange } from "@/utils/lzyutils";
+import { formatDuration, watchResourceChange } from "@/utils/lzyutils";
 
 import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
@@ -19,13 +18,12 @@ import {
   detectAllFaces,
   resizeResults,
   draw,
-  matchDimensions
+  matchDimensions,
 } from "face-api.js";
 
-await watchResourceChange()
+await watchResourceChange();
 
 const state = useStore();
-
 
 provide("RenderView", siderbar);
 
@@ -43,6 +41,7 @@ const canvasElement: Ref<HTMLCanvasElement | null> = ref(null);
 //人脸轮廓元素引用
 const canvasFaceContour = ref<HTMLCanvasElement | null>(null);
 
+// let faceDataSet: any = null
 
 // 初始化摄像头
 const initCamera = async () => {
@@ -75,15 +74,15 @@ const initCamera = async () => {
             .withFaceExpressions();
           // .withAgeAndGender();
           const resizedDetections = resizeResults(detections, { width, height });
-          if (resizedDetections.length === 0) return
-          const landmarks = resizedDetections[0].landmarks
-          const { width: boxWidth, } = resizedDetections[0].detection.box;
+          if (resizedDetections.length === 0) return;
+          const landmarks = resizedDetections[0].landmarks;
+          const { width: boxWidth } = resizedDetections[0].detection.box;
           // 计算脸部在屏幕中的宽度和高度的比例
-          const faceWidthToHeightRatio = boxWidth / width
+          const faceWidthToHeightRatio = boxWidth / width;
 
           ctx.clearRect(0, 0, width, height);
 
-          state.handleEffects(landmarks, faceContour, ctx, faceWidthToHeightRatio)
+          state.handleEffects(landmarks, faceContour, ctx, faceWidthToHeightRatio);
           // draw.drawContour(ctx, landmarks.positions);
           //在边框
           // draw.drawDetections(faceContour, resizedDetections);
@@ -93,7 +92,6 @@ const initCamera = async () => {
           // draw.drawFaceExpressions(faceContour, resizedDetections);
           //岁数和性别
         }, 90);
-
       } catch (error) {
         console.error("模型加载失败：", error);
       }
@@ -110,8 +108,7 @@ const initCamera = async () => {
         // 加载其他模型
         nets.mtcnn.loadFromUri("/models"),
         nets.ageGenderNet.loadFromUri("/models"),
-      ])
-
+      ]);
     };
   } catch (error) {
     console.error("访问摄像头时出错：", error);
@@ -119,17 +116,19 @@ const initCamera = async () => {
 };
 
 // 设置期望的宽高比，比如 16:9，4:3 等
-const desiredAspectRatio = computed(() => eval(state.ratioVideoData.replace(":", "/"))) as Ref<number>;
+const desiredAspectRatio = computed(() =>
+  eval(state.ratioVideoData.replace(":", "/"))
+) as Ref<number>;
 // 根据实际宽高比和期望宽高比来计算画布的宽高
 const canvasWidth = computed(() => {
   if (desiredAspectRatio.value > 1) {
-    return 900
+    return 900;
   } else {
-    return 480
+    return 480;
   }
 });
 const canvasHeight = computed(() => {
-  return canvasWidth.value / desiredAspectRatio.value
+  return canvasWidth.value / desiredAspectRatio.value;
 });
 
 // 使用 Web Workers 处理图像数据
@@ -144,8 +143,9 @@ const renderToCanvas = async () => {
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
   // 在 OffscreenCanvas 中渲染视频帧
   const offscreenCanvas = new OffscreenCanvas(newWidth, newHeight);
-  const offscreenContext = offscreenCanvas.getContext("2d", { willReadFrequently: true }) as OffscreenCanvasRenderingContext2D;
-
+  const offscreenContext = offscreenCanvas.getContext("2d", {
+    willReadFrequently: true,
+  }) as OffscreenCanvasRenderingContext2D;
 
   // 绘制视频图层
   offscreenContext.drawImage(video, x, y, newWidth, newHeight);
@@ -153,8 +153,8 @@ const renderToCanvas = async () => {
   offscreenContext.drawImage(canvasFaceContour.value!, 0, 0, newWidth, newHeight);
   // 获取 OffscreenCanvas 图像数据
   const imageData = offscreenContext.getImageData(0, 0, newWidth, newHeight);
-  const { contrast, brightness, saturation, hue, r, g, b } = state.fillterAgg
-  const { beauty, blur } = state.beautyAgg
+  const { contrast, light, saturation, hue } = state.fillterAgg;
+  const { beauty, blur } = state.beautyAgg;
   /**
    * 将滤镜参数传递给worker,让worker进行滤镜处理
    * 为什么要解构出来再传进去，因为worker里面不能直接使用state里面的数据
@@ -165,8 +165,9 @@ const renderToCanvas = async () => {
    */
   worker.postMessage({
     imageData: imageData,
-    fillterAgg: { contrast, brightness, saturation, hue, r, g, b },
-    beautyAgg: { beauty, blur }
+    // faceImageData,
+    fillterAgg: { contrast, light, saturation, hue },
+    beautyAgg: { beauty, blur },
   });
   // 接收 worker 处理后的图像数据
   worker.onmessage = (event) => {
@@ -181,7 +182,6 @@ const renderToCanvas = async () => {
     requestAnimationFrame(renderToCanvas);
   };
 };
-
 
 //背景透明
 // let r = data[i];
@@ -254,7 +254,7 @@ function sendBlobToMainProcess(isSaveAs) {
     reader.readAsArrayBuffer(blobData);
   } else {
     mediaParas.time = 0;
-    mediaParas.chunks = []
+    mediaParas.chunks = [];
     mediaParas.fileSize = 0;
 
     ElNotification.closeAll();
@@ -284,7 +284,7 @@ function saveSuccess(res) {
     fileSize: mediaParas.fileSize,
     filePath: res,
   };
-  storage.value.push(data)
+  storage.value.push(data);
   //视频保存成功后清空数据
   mediaParas.chunks = [];
   Object.keys(videoFileData).forEach((key) => {
@@ -328,7 +328,7 @@ onBeforeUnmount(() => {
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
     <div
-      class=" h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
+      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
       <div class="canvas-container">
         <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" width="640" height="480"
           :class="hasStartFlag ? 'border-red-500' : 'border-transparent'">
@@ -351,12 +351,8 @@ onBeforeUnmount(() => {
           <a class="ml-5 underline leading-8">{{ videoFileData.fileName }}</a>
         </div>
         <div class="flex gap-1">
-          <button class="btn" @click="sendBlobToMainProcess(false)">
-            保存视频
-          </button>
-          <button class="btn" @click="sendBlobToMainProcess(true)">
-            另存为
-          </button>
+          <button class="btn" @click="sendBlobToMainProcess(false)">保存视频</button>
+          <button class="btn" @click="sendBlobToMainProcess(true)">另存为</button>
           <div class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none">
             录制时长：{{ formatDuration(mediaParas.time) }}
           </div>
