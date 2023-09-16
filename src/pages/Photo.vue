@@ -2,7 +2,6 @@
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import type { Ref } from "vue";
-import { useEventListener, useStorage } from "@vueuse/core";
 
 import { ElNotification } from "element-plus";
 import { useStore } from "@/store/store";
@@ -117,18 +116,22 @@ const initCamera = async () => {
 
 // 设置期望的宽高比，比如 16:9，4:3 等
 const desiredAspectRatio = computed(() =>
-  eval(state.ratioVideoData.replace(":", "/"))
+  eval(state.ratioVideoData)
 ) as Ref<number>;
 // 根据实际宽高比和期望宽高比来计算画布的宽高
 const canvasWidth = computed(() => {
-  if (desiredAspectRatio.value > 1) {
-    return 900;
+  if (desiredAspectRatio.value >= 1) {
+    return 960;
   } else {
     return 480;
   }
 });
 const canvasHeight = computed(() => {
-  return canvasWidth.value / desiredAspectRatio.value;
+  if (desiredAspectRatio.value >= 1) {
+    return canvasWidth.value / desiredAspectRatio.value;
+  } else {
+    return canvasWidth.value * desiredAspectRatio.value;
+  }
 });
 
 // 使用 Web Workers 处理图像数据
@@ -139,6 +142,7 @@ const renderToCanvas = async () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
   const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
+  console.log(`lzy  x, y, newWidth, newHeight:`, x, y, newWidth, newHeight);
 
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
   // 在 OffscreenCanvas 中渲染视频帧
@@ -328,20 +332,47 @@ onBeforeUnmount(() => {
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
     <div
-      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
+      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3"
+    >
       <div class="canvas-container">
-        <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" width="640" height="480"
-          :class="hasStartFlag ? 'border-red-500' : 'border-transparent'">
+        <canvas
+          class="border-double bg-black border-2 m-auto"
+          ref="canverBgcolor"
+          :width="canvasWidth"
+          height="700"
+        ></canvas>
+        <canvas
+          class="canvasFaceContour"
+          ref="canvasElement"
+          :width="canvasWidth"
+          :height="canvasHeight"
+          :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
+        >
         </canvas>
-        <canvas class="canvasFaceContour" ref="canvasFaceContour" width="640" height="480"></canvas>
+        <canvas
+          class="canvasFaceContour"
+          ref="canvasFaceContour"
+          :width="canvasWidth"
+          :height="canvasHeight"
+        ></canvas>
       </div>
-      <video :width="canvasWidth" :height="canvasHeight" class="object-contain" ref="videoElement" style="display: none"
-        autoplay src="../assets/images/VeryCapture_20230811171452.mp4"></video>
+      <video
+        :width="canvasWidth"
+        :height="canvasHeight"
+        class="object-contain"
+        ref="videoElement"
+        style="display: none"
+        autoplay
+        src="../assets/images/VeryCapture_20230811171452.mp4"
+      ></video>
 
       <div class="flex justify-between gap-5 px-4">
         <div class="flex">
           <button class="btn" @click="startRecording">
-            <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
+            <span
+              class="flex place-content-center place-items-center"
+              v-if="!hasStartFlag"
+            >
               <LzyIcon name="mdi:stopwatch-start-outline"></LzyIcon>开始录制
             </span>
             <span class="flex place-content-center place-items-center" v-else>
@@ -353,7 +384,9 @@ onBeforeUnmount(() => {
         <div class="flex gap-1">
           <button class="btn" @click="sendBlobToMainProcess(false)">保存视频</button>
           <button class="btn" @click="sendBlobToMainProcess(true)">另存为</button>
-          <div class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none">
+          <div
+            class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none"
+          >
             录制时长：{{ formatDuration(mediaParas.time) }}
           </div>
         </div>
@@ -370,8 +403,8 @@ onBeforeUnmount(() => {
 
 .canvasFaceContour {
   position: absolute;
-  top: 0;
+  top: 50%;
   left: 50%;
-  translate: -50%;
+  translate: -50% -50%;
 }
 </style>

@@ -80,9 +80,9 @@ function changeTone(param, dataArray, i) {
     // 亮度的区间 [-0.5, 0.5]
     const delta = param.light
     const newL = Math.min(Math.max(hsl[2] + delta, 0), 100); // 限制亮度值在0到100之间
-    if (i % 10000 == 0) {
-      console.log(hsl[2], delta, newL)
-    }
+    // if (i % 10000 == 0) {
+    //   console.log(hsl[2], delta, newL)
+    // }
     hsl[2] = newL;
   }
 

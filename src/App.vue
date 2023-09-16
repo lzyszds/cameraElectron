@@ -2,14 +2,14 @@
 import NavTop from "@/components/NavTop.vue";
 import Photo from "@/pages/Photo.vue";
 import { formatFileSize } from "@/utils/lzyutils";
-import { ref } from "vue";
 const changeValue = ref<string>("record");
 const changeitem = (item: string) => {
   changeValue.value = item;
 };
 const heapUsed = ref(0);
-const heapTotal = ref(0);
+const heapTotal = ref(0); 
 setInterval(() => {
+  // 检查内存占用
   const memoryInfo = performance.memory;
   heapUsed.value = memoryInfo.usedJSHeapSize;
   heapTotal.value = memoryInfo.totalJSHeapSize;
