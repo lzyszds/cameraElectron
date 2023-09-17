@@ -1,20 +1,9 @@
-//黑白滤镜
-// const r = data[i] >= 80 && data[i] <= 200 ? 0 : 255;
-// data[i] = r;
-// data[i + 1] = r;
-// data[i + 2] = r;
-
-
 // 在 worker.js 文件中进行图像处理
 // 处理滤镜问题，在主渲染进程中进行滤镜计算会导致页面其他功能卡顿
 // 十分影响用户体验，所以我将滤镜计算放到 Web Worker 中进行
 onmessage = (event) => {
-  const imageData = event.data.imageData;
-  // const faceImageData = event.data.faceImageData;
+  const { imageData, fillterAgg, beautyAgg, filterActive, canvasWidth, canvasHeight } = event.data;
   const data = imageData.data;
-  // event.data.params.hue = event.data.params.hue / 360;
-  const fillterAgg = event.data.fillterAgg;
-  const beautyAgg = event.data.beautyAgg;
   // 将参数转换为百分比
   fillterAgg.contrast /= 100;
   fillterAgg.light /= 5;
@@ -28,6 +17,8 @@ onmessage = (event) => {
     changeTone(fillterAgg, data, i);
     //美颜设置
     // changeBeauty(beautyAgg, data, i);
+    //滤镜选择
+    changeFilter(filterActive, data, i, canvasWidth, canvasHeight);
   }
 
   // 处理对比度
@@ -45,16 +36,15 @@ onmessage = (event) => {
  * 与RGB相比，HSL更接近人类对颜色的感知
  * 使得调整颜色变得更加直观和易于理解
  */
-function changeTone(param, dataArray, i) {
-  // 从 RGB 转换为 HLS
-  const r = dataArray[i];
-  const g = dataArray[i + 1];
-  const b = dataArray[i + 2];
-  const from = [r, g, b];
-
+function changeTone(param, data, i) {
   if (param.hue === 0 && param.saturation === 0 && param.light === 0) {
     return;
   }
+  // 从 RGB 转换为 HLS
+  const r = data[i];
+  const g = data[i + 1];
+  const b = data[i + 2];
+  const from = [r, g, b];
 
   const hsl = rgbToHsl(from);
 
@@ -91,39 +81,39 @@ function changeTone(param, dataArray, i) {
   // if (offset % 10000 == 0) {
   //   console.log( hsl, newColor);
   // }
-  dataArray[i] = newColor[0];
-  dataArray[i + 1] = newColor[1];
-  dataArray[i + 2] = newColor[2];
+  data[i] = newColor[0];
+  data[i + 1] = newColor[1];
+  data[i + 2] = newColor[2];
 }
 
 
 // 获取灰度平均值
 function getGrayAverage(imagePixArray) {
-  var average = function (dataArray) {
-    let pixCount = dataArray.length / 4;
+  var average = function (data) {
+    let pixCount = data.length / 4;
     let sum = 0;
     for (let i = 0; i < pixCount; i++) {
       const pixOffset = i * 4;
-      let r = dataArray[pixOffset];
-      let g = dataArray[pixOffset + 1];
-      let b = dataArray[pixOffset + 2];
+      let r = data[pixOffset];
+      let g = data[pixOffset + 1];
+      let b = data[pixOffset + 2];
       sum = sum + (0.299 * r + 0.587 * b + 0.114 * g);
     }
-    let aver = sum / dataArray.length;
+    let aver = sum / data.length;
     return aver;
   };
   return average(imagePixArray);
 }
 
 // 对每个像素点 调节 对比度
-function makeContrast(dataArray, average, contrast) {
-  const pixCount = dataArray.length / 4;
+function makeContrast(data, average, contrast) {
+  const pixCount = data.length / 4;
 
   for (let i = 0; i < pixCount; i++) {
     const pixOffset = i * 4;
-    let r = dataArray[pixOffset];
-    let g = dataArray[pixOffset + 1];
-    let b = dataArray[pixOffset + 2];
+    let r = data[pixOffset];
+    let g = data[pixOffset + 1];
+    let b = data[pixOffset + 2];
 
     let newR = r + ((r - average) * contrast) / 255;
     let newG = g + ((g - average) * contrast) / 255;
@@ -147,9 +137,9 @@ function makeContrast(dataArray, average, contrast) {
       newB = 255;
     }
 
-    dataArray[pixOffset] = newR;
-    dataArray[pixOffset + 1] = newG;
-    dataArray[pixOffset + 2] = newB;
+    data[pixOffset] = newR;
+    data[pixOffset + 1] = newG;
+    data[pixOffset + 2] = newB;
   }
 }
 
@@ -227,3 +217,82 @@ function hslToRgb([h, s, l]) {
 
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
+
+function changeFilter(filterActive, data, i, canvasWidth, canvasHeight) {
+  switch (filterActive) {
+    case 'gray':
+      // 灰度化滤镜
+      const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      data[i] = avg;
+      data[i + 1] = avg;
+      data[i + 2] = avg;
+      break;
+    case 'reverse':
+      // 反转滤镜
+      data[i] = 255 - data[i];
+      data[i + 1] = 255 - data[i + 1];
+      data[i + 2] = 255 - data[i + 2];
+      break;
+    case 'warm':
+      // 暖色滤镜
+      data[i] += 10;  // 增加红色分量
+      data[i + 1] += 5;  // 增加绿色分量
+      data[i + 2] -= 5;  // 减少蓝色分量
+      break;
+    case 'cooler':
+      // 冷色滤镜
+      data[i] -= 10;  // 减少红色分量
+      data[i + 1] += 10;  // 增加绿色分量
+      data[i + 2] += 30;  // 增加蓝色分量
+      break;
+    case 'color':
+      // 色彩增强滤镜
+      data[i] = Math.min(255, data[i] * 1.5);  // 增加红色分量
+      data[i + 1] = Math.min(255, data[i + 1] * 1.5);  // 增加绿色分量
+      data[i + 2] = Math.min(255, data[i + 2] * 1.5);  // 增加蓝色分量
+      break;
+    case 'cyberpunk':
+      // 赛博朋克滤镜
+      data[i] -= 10;  // 减少红色分量
+      data[i + 1] += 20;  // 增加绿色分量
+      data[i + 2] += 80;  // 增加蓝色分量
+      break;
+    case 'film':
+      // 胶片效果滤镜
+      const brightness = 10; // 亮度增强值
+      const contrast = 0.9; // 对比度增强值
+
+      // 调整亮度和对比度
+      data[i] = Math.min(255, Math.max(0, data[i] + brightness));
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + brightness));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + brightness));
+
+      data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128));
+      data[i + 1] = Math.min(255, Math.max(0, (data[i + 1] - 128) * contrast + 128));
+      data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * contrast + 128));
+      break;
+    case 'texture':
+      // 纹理滤镜
+      const textureSize = 12; // 纹理块的尺寸
+
+      // 计算当前像素所属的纹理块的索引
+      const textureX = Math.floor(i / textureSize);
+      const textureIndex = (textureX * Math.ceil(canvasWidth / textureSize) + textureX) % 2;
+
+      // 根据纹理块的索引设置像素的颜色
+      const intensity = textureIndex === 0 ? 0 : 50; // 纹理强度
+
+      data[i] = Math.min(255, Math.max(0, data[i] + intensity));
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + intensity));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + intensity));
+      break;
+    case 'sharpening':
+      // 锐化滤镜
+      
+      break;
+    default:
+      break;
+  }
+
+}
+

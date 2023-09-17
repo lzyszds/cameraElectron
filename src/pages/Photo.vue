@@ -2,6 +2,7 @@
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import type { Ref } from "vue";
+import { useEventListener, useStorage } from "@vueuse/core";
 
 import { ElNotification } from "element-plus";
 import { useStore } from "@/store/store";
@@ -116,22 +117,18 @@ const initCamera = async () => {
 
 // 设置期望的宽高比，比如 16:9，4:3 等
 const desiredAspectRatio = computed(() =>
-  eval(state.ratioVideoData)
+  eval(state.ratioVideoData.replace(":", "/"))
 ) as Ref<number>;
 // 根据实际宽高比和期望宽高比来计算画布的宽高
 const canvasWidth = computed(() => {
-  if (desiredAspectRatio.value >= 1) {
-    return 960;
+  if (desiredAspectRatio.value > 1) {
+    return 900;
   } else {
     return 480;
   }
 });
 const canvasHeight = computed(() => {
-  if (desiredAspectRatio.value >= 1) {
-    return canvasWidth.value / desiredAspectRatio.value;
-  } else {
-    return canvasWidth.value * desiredAspectRatio.value;
-  }
+  return canvasWidth.value / desiredAspectRatio.value;
 });
 
 // 使用 Web Workers 处理图像数据
@@ -142,7 +139,6 @@ const renderToCanvas = async () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
   const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
-  console.log(`lzy  x, y, newWidth, newHeight:`, x, y, newWidth, newHeight);
 
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
   // 在 OffscreenCanvas 中渲染视频帧
@@ -172,6 +168,9 @@ const renderToCanvas = async () => {
     // faceImageData,
     fillterAgg: { contrast, light, saturation, hue },
     beautyAgg: { beauty, blur },
+    filterActive: state.activeFilterValue,
+    canvasWidth: newWidth,
+    canvasHeight: newHeight,
   });
   // 接收 worker 处理后的图像数据
   worker.onmessage = (event) => {
@@ -336,24 +335,18 @@ onBeforeUnmount(() => {
     >
       <div class="canvas-container">
         <canvas
-          class="border-double bg-black border-2 m-auto"
-          ref="canverBgcolor"
-          :width="canvasWidth"
-          height="700"
-        ></canvas>
-        <canvas
-          class="canvasFaceContour"
+          class="border-double bg-black border-2 m-auto max-h-[700px]"
           ref="canvasElement"
-          :width="canvasWidth"
-          :height="canvasHeight"
+          width="640"
+          height="480"
           :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
         >
         </canvas>
         <canvas
           class="canvasFaceContour"
           ref="canvasFaceContour"
-          :width="canvasWidth"
-          :height="canvasHeight"
+          width="640"
+          height="480"
         ></canvas>
       </div>
       <video
@@ -403,8 +396,8 @@ onBeforeUnmount(() => {
 
 .canvasFaceContour {
   position: absolute;
-  top: 50%;
+  top: 0;
   left: 50%;
-  translate: -50% -50%;
+  translate: -50%;
 }
 </style>
