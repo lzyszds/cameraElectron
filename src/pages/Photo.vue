@@ -91,7 +91,7 @@ const initCamera = async () => {
           //表情识别
           // draw.drawFaceExpressions(faceContour, resizedDetections);
           //岁数和性别
-        }, 90);
+        }, 30);
       } catch (error) {
         console.error("模型加载失败：", error);
       }

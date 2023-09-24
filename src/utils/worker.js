@@ -247,9 +247,9 @@ function changeFilter(filterActive, data, i, canvasWidth, canvasHeight) {
       break;
     case 'color':
       // 色彩增强滤镜
-      data[i] = Math.min(255, data[i] * 1.5);  // 增加红色分量
-      data[i + 1] = Math.min(255, data[i + 1] * 1.5);  // 增加绿色分量
-      data[i + 2] = Math.min(255, data[i + 2] * 1.5);  // 增加蓝色分量
+      data[i] = Math.min(255, data[i] * 1.2);  // 增加红色分量
+      data[i + 1] = Math.min(255, data[i + 1] * 1.2);  // 增加绿色分量
+      data[i + 2] = Math.min(255, data[i + 2] * 1.2);  // 增加蓝色分量
       break;
     case 'cyberpunk':
       // 赛博朋克滤镜

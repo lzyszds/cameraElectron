@@ -2,7 +2,7 @@
 import { useStore } from "@/store/store";
 
 const arr = [
-  { name: "初始参数", icon: "init", title: "初始参数", image: "" },
+  { name: "原画", icon: "init", title: "原画", image: "" },
   { name: "灰度化", icon: "gray", title: "灰度化", image: "" },
   { name: "反转", icon: "reverse", title: "反转", image: "" },
   { name: "暖色", icon: "warm", title: "暖色", image: "" },
