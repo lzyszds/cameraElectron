@@ -91,7 +91,7 @@ const initCamera = async () => {
           //表情识别
           // draw.drawFaceExpressions(faceContour, resizedDetections);
           //岁数和性别
-        }, 30);
+        }, 90);
       } catch (error) {
         console.error("模型加载失败：", error);
       }
@@ -295,7 +295,7 @@ function saveSuccess(res) {
   });
 }
 
-const activeTool = ref<string>("adjust");
+const activeTool = ref<string>("text");
 //切换工具
 const changeTools = (val: string) => {
   activeTool.value = val;
@@ -337,16 +337,16 @@ onBeforeUnmount(() => {
         <canvas
           class="border-double bg-black border-2 m-auto max-h-[700px]"
           ref="canvasElement"
-          width="640"
-          height="480"
+          :width="640"
+          :height="480"
           :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
         >
         </canvas>
         <canvas
           class="canvasFaceContour"
           ref="canvasFaceContour"
-          width="640"
-          height="480"
+          :width="640"
+          :height="480"
         ></canvas>
       </div>
       <video

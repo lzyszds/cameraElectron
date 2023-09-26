@@ -2,7 +2,7 @@
 import { inject, ref } from "vue";
 import { Siderbar } from "@/typing/SideBarType";
 const siderbar = inject<Siderbar[]>("RenderView");
-const activeTool = ref<string>("adjust");
+const activeTool = ref<string>("text");
 const emit = defineEmits(["changeTools"]);
 const changeTools = (val) => {
   emit("changeTools", val);

@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import 'element-plus/dist/index.css'
 import "./style.scss"
-import './assets/css/elementplus.scss'
+import './assets/css/elementplus.css'
 import App from './App.vue'
 import LzyIcon from '@/components/lzyCompontens/LzyIcon.vue';
 import LzyProgress from '@/components/lzyCompontens/LzyProgress.vue';
