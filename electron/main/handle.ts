@@ -1,6 +1,7 @@
 import { ipcMain, dialog, nativeTheme, shell, BrowserWindow, clipboard, nativeImage, desktopCapturer, screen, globalShortcut } from 'electron';
 import type { App } from 'electron';
 import fs from 'fs';
+import path from 'path';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
 import { startRecordShortcut } from './keyboard'
 
@@ -49,6 +50,8 @@ export class WindowManager {
     this.registerGetMousePosition()
     //注册快捷键
     // startRecordShortcut(this.onPopupTop.bind(this))
+    //存储拍照的图片
+    this.registerPhotograph()
   }
 
   // 处理窗口操作请求
@@ -249,5 +252,34 @@ export class WindowManager {
   // 注册 onGetMousePosition 事件监听
   private registerGetMousePosition(): void {
     ipcMain.handle('getMousePosition', this.onGetMousePosition.bind(this));
+  }
+  //拍照图片存储
+  private async onPhotograph(event: Electron.IpcMainInvokeEvent, arg: any) {
+
+    // 获取当前时间戳和随机字符串
+    const timestamp = new Date().getTime();
+    const randomStr = Math.random().toString(36).substr(2, 5);
+
+    // 构造文件名和文件路径
+    const fileName = `photo_${timestamp}_${randomStr}.png`;
+    const filePath = path.join(this.app.getPath('documents'), 'ytjs', fileName);
+
+    // 将像素数据转换为Buffer
+    const buffer = Buffer.from(arg, 'base64');
+
+    // 保存Buffer为文件
+    fs.writeFile(filePath, buffer, function (err) {
+      if (err) {
+        console.error('Failed to save file:', err);
+      } else {
+        console.log('File saved successfully.');
+      }
+    });
+
+    return filePath;
+  }
+  // 注册 onPhotograph 事件监听
+  private registerPhotograph(): void {
+    ipcMain.handle('photograph', this.onPhotograph.bind(this));
   }
 }

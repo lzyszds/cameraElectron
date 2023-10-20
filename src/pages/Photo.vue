@@ -210,6 +210,7 @@ const startRecording = () => {
     mediaParas.time = 0;
   }
 };
+
 const videoFileData = reactive<videoFileDataType>({
   fileName: "",
   createTime: "",
@@ -300,6 +301,13 @@ const activeTool = ref<string>("text");
 const changeTools = (val: string) => {
   activeTool.value = val;
 };
+//拍照功能
+const photograph = () => {
+  const canvas = canvasElement.value!;
+  const dataURL = canvas.toDataURL('image/png');
+  const data = dataURL.replace(/^data:image\/\w+;base64,/, '');
+  window.myElectron.photograph(data)
+}
 
 nextTick(() => {
   initCamera();
@@ -331,55 +339,35 @@ onBeforeUnmount(() => {
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
     <div
-      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3"
-    >
+      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
       <div class="canvas-container">
-        <canvas
-          class="border-double bg-black border-2 m-auto max-h-[700px]"
-          ref="canvasElement"
-          :width="640"
-          :height="480"
-          :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
-        >
+        <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" :width="640"
+          :height="480" :class="hasStartFlag ? 'border-red-500' : 'border-transparent'">
         </canvas>
-        <canvas
-          class="canvasFaceContour"
-          ref="canvasFaceContour"
-          :width="640"
-          :height="480"
-        ></canvas>
+        <canvas class="canvasFaceContour" ref="canvasFaceContour" :width="640" :height="480"></canvas>
       </div>
-      <video
-        :width="canvasWidth"
-        :height="canvasHeight"
-        class="object-contain"
-        ref="videoElement"
-        style="display: none"
-        autoplay
-        src="../assets/images/VeryCapture_20230811171452.mp4"
-      ></video>
+      <video :width="canvasWidth" :height="canvasHeight" class="object-contain" ref="videoElement" style="display: none"
+        autoplay src="../assets/images/VeryCapture_20230811171452.mp4"></video>
 
       <div class="flex justify-between gap-5 px-4">
         <div class="flex">
           <button class="btn" @click="startRecording">
-            <span
-              class="flex place-content-center place-items-center"
-              v-if="!hasStartFlag"
-            >
-              <LzyIcon name="mdi:stopwatch-start-outline"></LzyIcon>开始录制
+            <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
+              <LzyIcon width="14px" height="14px" style="margin-right: 3px;" name="bi:record-btn-fill"></LzyIcon>开始录制
             </span>
             <span class="flex place-content-center place-items-center" v-else>
               <LzyIcon name="ph:stop-circle" style="color: red"></LzyIcon>结束录制
             </span>
+          </button>
+          <button class="btn ml-1" @click="photograph">
+            <LzyIcon name="raphael:photo"></LzyIcon>拍照
           </button>
           <a class="ml-5 underline leading-8">{{ videoFileData.fileName }}</a>
         </div>
         <div class="flex gap-1">
           <button class="btn" @click="sendBlobToMainProcess(false)">保存视频</button>
           <button class="btn" @click="sendBlobToMainProcess(true)">另存为</button>
-          <div
-            class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none"
-          >
+          <div class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none">
             录制时长：{{ formatDuration(mediaParas.time) }}
           </div>
         </div>

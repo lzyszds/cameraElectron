@@ -14,6 +14,7 @@ const validChannels = [
   'onSetTopPopupGetPosition', // 设置置顶弹窗位置
   'startRecord',  // 开始录制
   'endRecord',  // 结束录制
+  'photograph', // 拍照
 ]
 
 const myElectron = {}
