@@ -1,23 +1,19 @@
 <script setup lang="ts">
 import Adjust from "@/components/actionbarCompontens/Adjust.vue";
-import Ratio from "@/components/actionbarCompontens/Ratio.vue";
 import Filters from "@/components/actionbarCompontens/Filters.vue";
 import Effects from "@/components/actionbarCompontens/Effects.vue";
 import Text from "@/components/actionbarCompontens/Text.vue";
 import Sticker from "@/components/actionbarCompontens/Sticker.vue";
 import watermark from "@/components/actionbarCompontens/Watermark.vue";
-import Rotate from "@/components/actionbarCompontens/Rotate.vue";
 import Frame from "@/components/actionbarCompontens/Frame.vue";
 const props = defineProps<{ activeTool: string }>();
 const componentsItems = {
   adjust: Adjust,
-  ratio: Ratio,
   filters: Filters,
   effects: Effects,
   text: Text,
   sticker: Sticker,
   watermark: watermark,
-  rotate: Rotate,
   frame: Frame,
 };
 </script>

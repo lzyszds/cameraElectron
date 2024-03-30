@@ -10,11 +10,6 @@ export const siderbar: Siderbar[] = [
     icon: "teenyicons:adjust-horizontal-alt-outline",
   },
   {
-    title: "比例",
-    name: "ratio",
-    icon: "solar:crop-broken",
-  },
-  {
     title: "滤镜",
     name: "filters",
     icon: "solar:filters-broken",
@@ -39,12 +34,6 @@ export const siderbar: Siderbar[] = [
     name: "watermark",
     icon: "material-symbols:branding-watermark-outline-rounded",
   },
-  {
-    title: "旋转",
-    name: "rotate",
-    icon: "mdi:rotate-3d",
-  },
-
   {
     title: "画框",
     name: "frame",
