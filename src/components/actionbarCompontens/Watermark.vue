@@ -108,7 +108,7 @@ const startWater = () => {
   border-radius: 5px;
   padding: 5px 10px;
   background-color: var(--color);
-  color: #fff;
+  color: var(--reverColor);
   cursor: pointer;
   border: 1px solid var(--color);
   &:hover {

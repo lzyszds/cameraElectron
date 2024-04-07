@@ -42,6 +42,10 @@ const canvasElement: Ref<HTMLCanvasElement | null> = ref(null);
 const canvasFaceContour = ref<HTMLCanvasElement | null>(null);
 //水印元素引用
 const canvasWaterContour = ref<HTMLCanvasElement | null>(null);
+//文字元素引用
+const canvasTextContour = ref<HTMLCanvasElement | null>(null);
+//贴纸元素引用
+const canvasStickerContour = ref<HTMLCanvasElement | null>(null);
 
 // let faceDataSet: any = null
 
@@ -209,6 +213,10 @@ const renderToCanvas = async () => {
     context.clearRect(0, 0, newWidth, newHeight);
 
     context!.putImageData(processedImageData, 0, 0);
+    //将贴纸画布放置在视频上面
+    context.drawImage(canvasStickerContour.value!, 0, 0, newWidth, newHeight);
+    //将画框画布放置在视频上面
+    context.drawImage(canvasTextContour.value!, 0, 0, newWidth, newHeight);
     //将水印画布放置在视频上面
     context.drawImage(
       canvasWaterContour.value!,
@@ -362,6 +370,87 @@ const photograph = () => {
   });
 };
 
+//在视频中添加贴纸
+const addSticker = () => {
+  const canvas = canvasStickerContour.value!;
+  console.log(`lzy  canvas:`, canvas);
+  const ctx = canvas.getContext("2d")!;
+  const { width, height } = canvas;
+
+  const { sticker } = state;
+  if (sticker === "notSticker") return ctx.clearRect(0, 0, width, height);
+  const img = new Image();
+  img.src = new URL(
+    `../assets/images/sticker/${sticker}.png`,
+    import.meta.url
+  ).href;
+  img.onload = () => {
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, 200, 200);
+  };
+  let flag = false,
+    stickerPosition = { x: 0, y: 0 };
+  //添加拖拽事件
+  canvas.onmousedown = (e) => {
+    const stpX = stickerPosition.x;
+    const stpY = stickerPosition.y;
+    const x = e.offsetX;
+    const y = e.offsetY;
+
+    // 检查鼠标点击的位置是否在贴纸上
+    if (stpX != 0 && stpY != 0) {
+      if (x > stpX && x < stpX + 200 && y > stpY && y < stpY + 200) {
+        flag = true;
+      } else {
+        flag = false;
+      }
+    } else {
+      flag = true;
+    }
+
+    canvas.onmousemove = (e) => {
+      console.log(e.offsetX, x);
+      if (!flag) return;
+      let moveX = e.offsetX - x + stpX;
+      moveX = moveX < 0 ? 0 : moveX; // 限制贴纸的移动范围
+      moveX = moveX > width - 200 ? width - 200 : moveX;
+      let moveY = e.offsetY - y + stpY;
+      moveY = moveY < 0 ? 0 : moveY;
+      console.log(`lzy   moveX, moveY:`, moveX, moveY);
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(img, moveX, moveY, 200, 200);
+      // 记录贴纸的位置
+      stickerPosition = {
+        x: moveX,
+        y: moveY,
+      };
+    };
+
+    canvas.onmouseup = (e) => {
+      flag = false;
+      canvas.onmousemove = null;
+    };
+  };
+};
+
+//添加画框
+const addFrame = () => {
+  const canvas = canvasTextContour.value!;
+  const ctx = canvas.getContext("2d")!;
+  const { width, height } = canvas;
+  const { frame } = state;
+  if (frame === "notFrame") return ctx.clearRect(0, 0, width, height);
+  const img = new Image();
+  img.src = new URL(
+    `../assets/images/frame/${frame}.png`,
+    import.meta.url
+  ).href;
+  img.onload = () => {
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+  };
+};
+
 let timer;
 //生成水印
 const watermark = () => {
@@ -408,8 +497,20 @@ nextTick(() => {
 
 watch(
   () => waterData.value,
-  (val) => {
+  () => {
     watermark();
+  }
+);
+watch(
+  () => state.sticker,
+  () => {
+    addSticker();
+  }
+);
+watch(
+  () => state.frame,
+  () => {
+    addFrame();
   }
 );
 
@@ -461,6 +562,21 @@ onBeforeUnmount(() => {
           ref="canvasFaceContour"
           :width="640"
           :height="480"
+        ></canvas>
+        <!-- 文字图层 -->
+        <canvas
+          class="canvasTextContour"
+          ref="canvasTextContour"
+          :width="640"
+          :height="480"
+        ></canvas>
+        <!-- 贴纸图层 -->
+        <canvas
+          class="canvasStickerContour"
+          ref="canvasStickerContour"
+          :width="640"
+          :height="480"
+          style="opacity: 0"
         ></canvas>
         <!-- 水印图层 -->
         <canvas
@@ -529,7 +645,9 @@ onBeforeUnmount(() => {
   position: relative;
 }
 
-.canvasFaceContour {
+.canvasFaceContour,
+.canvasTextContour,
+.canvasStickerContour {
   position: absolute;
   top: 0;
   left: 50%;
