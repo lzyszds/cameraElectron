@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { inject, ref } from "vue";
 import { Siderbar } from "@/typing/SideBarType";
+import { useSessionStorage } from "@vueuse/core";
 const siderbar = inject<Siderbar[]>("RenderView");
-const activeTool = ref<string>("text");
+const activeTool = useSessionStorage("activeTool", "text");
 const emit = defineEmits(["changeTools"]);
 const changeTools = (val) => {
   emit("changeTools", val);
@@ -12,16 +13,20 @@ const changeTools = (val) => {
 
 <template>
   <div class="flex flex-col gap-4 mb-[200px] mt-8">
-    <div v-for="item in siderbar" :key="item.name"
+    <div
+      v-for="item in siderbar"
+      :key="item.name"
       class="sidebarItem flex flex-col justify-center items-center h-16 w-full cursor-pointer"
-      :class="{ active: activeTool === item.name }" @click="changeTools(item.name)">
+      :class="{ active: activeTool === item.name }"
+      @click="changeTools(item.name)"
+    >
       <LzyIcon :name="item.icon"></LzyIcon>
       <span class="text-[14px]">{{ item.title }}</span>
     </div>
   </div>
 </template>
 
-<style lang="scss" >
+<style lang="scss">
 .sidebarItem {
   &.active {
     svg {

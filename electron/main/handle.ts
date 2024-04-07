@@ -138,7 +138,7 @@ export class WindowManager {
 
         const timestamp = new Date().getTime();
         const randomStr = Math.random().toString(36).substr(2, 5);
-        const fileName = `\\video_${timestamp}_${randomStr}.webm`;
+        const fileName = `\\video${timestamp}${randomStr}.webm`;
         filePath += fileName;
         console.log(`lzy  filePath:`, filePath)
 
@@ -261,7 +261,7 @@ export class WindowManager {
     const randomStr = Math.random().toString(36).substr(2, 5);
 
     // 构造文件名和文件路径
-    const fileName = `photo_${timestamp}_${randomStr}.png`;
+    const fileName = `photo${timestamp}${randomStr}.png`;
     const filePath = path.join(this.app.getPath('documents'), 'ytjs', fileName);
 
     // 将像素数据转换为Buffer
@@ -276,7 +276,13 @@ export class WindowManager {
       }
     });
 
-    return filePath;
+    const result = {
+      fileName,
+      filePath,
+      size: buffer.length,
+    }
+
+    return result;
   }
   // 注册 onPhotograph 事件监听
   private registerPhotograph(): void {

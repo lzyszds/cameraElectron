@@ -44,6 +44,12 @@ export const siderbar: Siderbar[] = [
 
 //根据video计算canvas需要的宽高
 export function resizeRatio(videoElement, canvasElement) {
+  if (!videoElement || !canvasElement) return {
+    x: 0,
+    y: 0,
+    newWidth: 0,
+    newHeight: 0,
+  }
   const originalWidth = videoElement!.videoWidth;
   const originalHeight = videoElement!.videoHeight;
 

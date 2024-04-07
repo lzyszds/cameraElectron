@@ -2,9 +2,9 @@
 import ActionBar from "@/components/ActionBar.vue";
 import Sidebar from "@/components/Sidebar.vue";
 import type { Ref } from "vue";
-import { useEventListener, useStorage } from "@vueuse/core";
+import { useEventListener, useStorage, useSessionStorage } from "@vueuse/core";
 
-import { ElNotification } from "element-plus";
+import { ElNotification, dayjs } from "element-plus";
 import { useStore } from "@/store/store";
 import { formatDuration, watchResourceChange } from "@/utils/lzyutils";
 
@@ -40,8 +40,22 @@ const videoElement: Ref<HTMLVideoElement | null> = ref(null);
 const canvasElement: Ref<HTMLCanvasElement | null> = ref(null);
 //人脸轮廓元素引用
 const canvasFaceContour = ref<HTMLCanvasElement | null>(null);
+//水印元素引用
+const canvasWaterContour = ref<HTMLCanvasElement | null>(null);
 
 // let faceDataSet: any = null
+
+//水印数据
+const waterData = useSessionStorage("waterData", {
+  family: "微软雅黑",
+  size: 16,
+  weight: false,
+  time: false,
+  color: "#FFFFFF",
+  bgColor: "#000000",
+  val: "影天技术",
+  isEnable: false,
+});
 
 // 初始化摄像头
 const initCamera = async () => {
@@ -65,6 +79,7 @@ const initCamera = async () => {
 
         // 开始进行人脸识别
         setInterval(async () => {
+          if (!videoElement.value) return;
           const detections = await detectAllFaces(
             videoElement.value!,
             new TinyFaceDetectorOptions()
@@ -73,7 +88,10 @@ const initCamera = async () => {
             .withFaceDescriptors()
             .withFaceExpressions();
           // .withAgeAndGender();
-          const resizedDetections = resizeResults(detections, { width, height });
+          const resizedDetections = resizeResults(detections, {
+            width,
+            height,
+          });
           if (resizedDetections.length === 0) return;
           const landmarks = resizedDetections[0].landmarks;
           const { width: boxWidth } = resizedDetections[0].detection.box;
@@ -82,7 +100,12 @@ const initCamera = async () => {
 
           ctx.clearRect(0, 0, width, height);
 
-          state.handleEffects(landmarks, faceContour, ctx, faceWidthToHeightRatio);
+          state.handleEffects(
+            landmarks,
+            faceContour,
+            ctx,
+            faceWidthToHeightRatio
+          );
           // draw.drawContour(ctx, landmarks.positions);
           //在边框
           // draw.drawDetections(faceContour, resizedDetections);
@@ -150,7 +173,13 @@ const renderToCanvas = async () => {
   // 绘制视频图层
   offscreenContext.drawImage(video, x, y, newWidth, newHeight);
   // 在 OffscreenCanvas 中渲染特效
-  offscreenContext.drawImage(canvasFaceContour.value!, 0, 0, newWidth, newHeight);
+  offscreenContext.drawImage(
+    canvasFaceContour.value!,
+    0,
+    0,
+    newWidth,
+    newHeight
+  );
   // 获取 OffscreenCanvas 图像数据
   const imageData = offscreenContext.getImageData(0, 0, newWidth, newHeight);
   const { contrast, light, saturation, hue } = state.fillterAgg;
@@ -180,24 +209,28 @@ const renderToCanvas = async () => {
     context.clearRect(0, 0, newWidth, newHeight);
 
     context!.putImageData(processedImageData, 0, 0);
+    //将水印画布放置在视频上面
+    context.drawImage(
+      canvasWaterContour.value!,
+      0,
+      newHeight - 50,
+      newWidth,
+      50
+    );
 
     // 继续渲染下一帧
     requestAnimationFrame(renderToCanvas);
   };
 };
 
-//背景透明
-// let r = data[i];
-// let g = data[i + 1];
-// let b = data[i + 2];
-// if (g > 100 && r > 100 && b < 43) data[i + 3] = 0;
-
 const hasStartFlag = ref<boolean>(false);
 // 开始录制
 let interTimefn: any = null;
 const startRecording = () => {
   if (!hasStartFlag.value) {
-    mediaParas.mediaRecorder = new MediaRecorder(canvasElement.value!.captureStream());
+    mediaParas.mediaRecorder = new MediaRecorder(
+      canvasElement.value!.captureStream()
+    );
     mediaParas.mediaRecorder.ondataavailable = handleDataAvailable;
     mediaParas.mediaRecorder.start();
     hasStartFlag.value = true;
@@ -224,8 +257,8 @@ const stopRecording = () => {
     hasStartFlag.value = false;
     const timestamp = new Date().getTime();
     const randomStr = Math.random().toString(36).substr(2, 5);
-    videoFileData.fileName = `video_${timestamp}_${randomStr}.webm`;
-    videoFileData.createTime = new Date().toLocaleString();
+    videoFileData.fileName = `video${timestamp}${randomStr}.webm`;
+    videoFileData.createTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
   }
 };
 
@@ -249,10 +282,12 @@ function sendBlobToMainProcess(isSaveAs) {
     reader.onload = () => {
       const arrayBuffer = reader.result;
       // 发送 Blob 数据给主进程
-      window.myElectron.saveDeviceVideo({ arrayBuffer, isSaveAs }).then((res) => {
-        if (res === "Error") return;
-        saveSuccess(res); //保存成功后
-      });
+      window.myElectron
+        .saveDeviceVideo({ arrayBuffer, isSaveAs })
+        .then((res) => {
+          if (res === "Error") return;
+          saveSuccess(res); //保存成功后
+        });
     };
     //先转成ArrayBuffer 读取完成后再转成ArrayBuffer 先走完这个再走onload
     reader.readAsArrayBuffer(blobData);
@@ -296,7 +331,7 @@ function saveSuccess(res) {
   });
 }
 
-const activeTool = ref<string>("text");
+const activeTool = useSessionStorage("activeTool", "text");
 //切换工具
 const changeTools = (val: string) => {
   activeTool.value = val;
@@ -304,15 +339,82 @@ const changeTools = (val: string) => {
 //拍照功能
 const photograph = () => {
   const canvas = canvasElement.value!;
-  const dataURL = canvas.toDataURL('image/png');
-  const data = dataURL.replace(/^data:image\/\w+;base64,/, '');
-  window.myElectron.photograph(data)
-}
+  const dataURL = canvas.toDataURL("image/png");
+  const data = dataURL.replace(/^data:image\/\w+;base64,/, "");
 
+  window.myElectron.photograph(data).then((res) => {
+    console.log(`lzy  res:`, res);
+    if (res === "Error") return;
+    ElNotification.closeAll();
+    ElNotification({
+      title: "保存成功",
+      message: "照片保存成功",
+      type: "success",
+      duration: 1000,
+    });
+    const data = {
+      fileName: res.fileName,
+      createTime: dayjs().format("YYYY-MM-DD HH:mm:ss"),
+      fileSize: res.size,
+      filePath: res.filePath,
+    };
+    storage.value.push(data);
+  });
+};
+
+let timer;
+//生成水印
+const watermark = () => {
+  const { val, color, size, family, bgColor, isEnable } = waterData.value;
+  const canvas = canvasWaterContour.value!;
+  const ctx = canvas.getContext("2d")!;
+  const { width, height } = canvas;
+  timer && clearInterval(timer);
+  ctx.clearRect(0, 0, width, height);
+  if (!isEnable) return;
+
+  //添加时间
+  if (waterData.value.time) {
+    timer = setInterval(() => {
+      const newTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, width, height);
+      ctx.font = `${size}px ${family}`;
+      ctx.fillStyle = color;
+      ctx.fillText(val, 10, 30);
+      // 计算文本宽度的偏移量
+      const textWidth = ctx.measureText(newTime).width;
+      if (videoElement.value === null) return;
+      const offsetX = videoElement.value!.videoWidth - textWidth - 10;
+
+      // 将文本绘制到画布的右下角
+      ctx.fillText(newTime, offsetX, 30);
+    }, 1000);
+  } else {
+    //添加背景颜色
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+    ctx.font = `${size}px ${family}`;
+    ctx.fillStyle = color;
+    ctx.fillText(val, 10, 30);
+  }
+};
 nextTick(() => {
   initCamera();
   //视频宽度默认为父元素宽度
   // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 20 || 640;
+});
+
+watch(
+  () => waterData.value,
+  (val) => {
+    watermark();
+  }
+);
+
+onMounted(() => {
+  watermark();
 });
 
 // canvasWidth随着页面宽度变化而变化
@@ -332,31 +434,70 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="pt-1 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden">
+  <div
+    class="pt-1 grid grid-cols-[70px_255px_1fr] gap-4 grid-rows-1 overflow-hidden"
+  >
     <!-- 侧边栏 -->
     <Sidebar @changeTools="changeTools"></Sidebar>
     <!-- 操作栏 -->
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
     <div
-      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3">
+      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3"
+    >
       <div class="canvas-container">
-        <canvas class="border-double bg-black border-2 m-auto max-h-[700px]" ref="canvasElement" :width="640"
-          :height="480" :class="hasStartFlag ? 'border-red-500' : 'border-transparent'">
+        <!-- 录像图层 -->
+        <canvas
+          class="border-double bg-black border-2 m-auto max-h-[700px]"
+          ref="canvasElement"
+          :width="640"
+          :height="480"
+          :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
+        >
         </canvas>
-        <canvas class="canvasFaceContour" ref="canvasFaceContour" :width="640" :height="480"></canvas>
+        <!-- 人脸识别图层 -->
+        <canvas
+          class="canvasFaceContour"
+          ref="canvasFaceContour"
+          :width="640"
+          :height="480"
+        ></canvas>
+        <!-- 水印图层 -->
+        <canvas
+          class="canvasWaterContour"
+          ref="canvasWaterContour"
+          :width="640"
+          :height="50"
+        ></canvas>
       </div>
-      <video :width="canvasWidth" :height="canvasHeight" class="object-contain" ref="videoElement" style="display: none"
-        autoplay src="../assets/images/VeryCapture_20230811171452.mp4"></video>
+      <video
+        :width="canvasWidth"
+        :height="canvasHeight"
+        class="object-contain"
+        ref="videoElement"
+        style="display: none"
+        autoplay
+        src="../assets/images/VeryCapture_20230811171452.mp4"
+      ></video>
 
       <div class="flex justify-between gap-5 px-4">
         <div class="flex">
           <button class="btn" @click="startRecording">
-            <span class="flex place-content-center place-items-center" v-if="!hasStartFlag">
-              <LzyIcon width="14px" height="14px" style="margin-right: 3px;" name="bi:record-btn-fill"></LzyIcon>开始录制
+            <span
+              class="flex place-content-center place-items-center"
+              v-if="!hasStartFlag"
+            >
+              <LzyIcon
+                width="14px"
+                height="14px"
+                style="margin-right: 3px"
+                name="bi:record-btn-fill"
+              ></LzyIcon
+              >开始录制
             </span>
             <span class="flex place-content-center place-items-center" v-else>
-              <LzyIcon name="ph:stop-circle" style="color: red"></LzyIcon>结束录制
+              <LzyIcon name="ph:stop-circle" style="color: red"></LzyIcon
+              >结束录制
             </span>
           </button>
           <button class="btn ml-1" @click="photograph">
@@ -365,9 +506,15 @@ onBeforeUnmount(() => {
           <a class="ml-5 underline leading-8">{{ videoFileData.fileName }}</a>
         </div>
         <div class="flex gap-1">
-          <button class="btn" @click="sendBlobToMainProcess(false)">保存视频</button>
-          <button class="btn" @click="sendBlobToMainProcess(true)">另存为</button>
-          <div class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none">
+          <button class="btn" @click="sendBlobToMainProcess(false)">
+            保存视频
+          </button>
+          <button class="btn" @click="sendBlobToMainProcess(true)">
+            另存为
+          </button>
+          <div
+            class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none"
+          >
             录制时长：{{ formatDuration(mediaParas.time) }}
           </div>
         </div>
@@ -385,6 +532,12 @@ onBeforeUnmount(() => {
 .canvasFaceContour {
   position: absolute;
   top: 0;
+  left: 50%;
+  translate: -50%;
+}
+.canvasWaterContour {
+  position: absolute;
+  bottom: 2px;
   left: 50%;
   translate: -50%;
 }
