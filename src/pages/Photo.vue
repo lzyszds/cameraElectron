@@ -224,6 +224,9 @@ const renderToCanvas = async () => {
     // 清除 Canvas 内容
     context.clearRect(0, 0, newWidth, newHeight);
 
+    // 计算旋转角度
+    const angle = -90 * (Math.PI / 180); // 将角度转换为弧度并取反
+
     context!.putImageData(processedImageData, 0, 0);
     //将贴纸画布放置在视频上面
     context.drawImage(canvasStickerContour.value!, 0, 0, newWidth, newHeight);

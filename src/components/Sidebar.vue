@@ -3,7 +3,7 @@ import { inject, ref } from "vue";
 import { Siderbar } from "@/typing/SideBarType";
 import { useSessionStorage } from "@vueuse/core";
 const siderbar = inject<Siderbar[]>("RenderView");
-const activeTool = useSessionStorage("activeTool", "text");
+const activeTool = useSessionStorage("activeTool", "adjust");
 const emit = defineEmits(["changeTools"]);
 const changeTools = (val) => {
   emit("changeTools", val);

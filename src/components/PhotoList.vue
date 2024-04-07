@@ -27,7 +27,7 @@ const delVideo = (path) => {
           type: "success",
           duration: 1000,
         });
-        videoFileDataList.value = isReverhandle();
+        // videoFileDataList.value = isReverhandle();
       }
 
       //根据item获取索引
@@ -40,7 +40,13 @@ const openFolder = (path) => {
   window.myElectron.onOpenFolder(path);
 };
 const onCopyFile = (path) => {
-  window.myElectron.onCopyFile(path);
+  window.myElectron.onCopyFile(path).then((res) => {
+    ElMessage({
+      message: res,
+      type: "success",
+      duration: 1000,
+    });
+  });
 };
 const copyFileName = (fileName) => {
   navigator.clipboard.writeText(fileName);

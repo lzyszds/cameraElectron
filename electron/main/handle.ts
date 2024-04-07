@@ -221,24 +221,29 @@ export class WindowManager {
   // 复制文件进剪切板 // 未完成
   private onCopyFile(event: Electron.IpcMainInvokeEvent, arg: any) {
     const filePath = arg;
+    return new Promise<String>((resolve, reject) => {
+      //判断文件夹是否存在
+      if (fs.existsSync(filePath)) {
+        // 读取文件内容
+        // 读取视频文件的内容
+        fs.readFile(filePath, (err: any, data) => {
+          if (err) {
+            console.error('无法读取视频文件:', err);
+            return;
+          }
+          // 创建 NativeImage 对象
+          const image = nativeImage.createFromBuffer(data);
 
-    //判断文件夹是否存在
-    if (fs.existsSync(filePath)) {
-      // 读取文件内容
-      // 读取视频文件的内容
-      fs.readFile(filePath, 'base64', (err: any, data) => {
-        if (err) {
-          console.error('无法读取视频文件:', err);
-          return;
-        }
-        // 将 Buffer 编码的视频数据写入剪贴板
-        clipboard.writeImage(nativeImage.createFromDataURL(`${data}`));
+          // 将图片数据写入剪贴板
+          clipboard.writeImage(image);
 
-        console.log('视频数据已复制到剪贴板');
-      });
-    } else {
-      dialog.showErrorBox('提示', '文件不存在');
-    }
+          resolve("图片已经复制到剪切板")
+        });
+      } else {
+        dialog.showErrorBox('提示', '文件不存在');
+      }
+    })
+
   }
   // 注册 onCopyFile 事件监听
   private registerCopyFile(): void {
