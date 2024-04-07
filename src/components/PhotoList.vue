@@ -142,6 +142,7 @@ function isReverhandle() {
             name="mdi-light:folder-multiple"
           ></LzyIcon>
           <LzyIcon
+            v-if="item.fileName.indexOf('.webm') < 0"
             :tipPosition="index === 0 ? 'bottom' : 'top'"
             @click="onCopyFile(item.filePath)"
             tip="复制到剪切板"
