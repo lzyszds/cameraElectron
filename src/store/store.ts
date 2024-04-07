@@ -12,6 +12,7 @@ export const useStore = defineStore('counter', () => {
   const effectsData = ref<string>('') //特效数据
   const sticker = ref<string>('') //贴纸数据
   const frame = ref<string>('') //画框数据
+  const text = ref<string>('') //文字数据
   const activeFilterValue = ref<string>('init') //当前选中的滤镜值
   const setActionToolsValue = (val: string,) => {
     actionToolsValue.value = val
@@ -25,10 +26,6 @@ export const useStore = defineStore('counter', () => {
    */
   const handleEffects = (landmarks, faceContour, ctx, sizeMulitple) => {
     switch (effectsData.value) {
-      case 'theForeheadFont':
-        //额头文字特效
-        specialEffects.theForeheadFont(ctx, landmarks)
-        break;
       case 'dogHead':
         //哈士奇狗头特效
         specialEffects.dogHead(ctx, landmarks, sizeMulitple)
@@ -71,6 +68,7 @@ export const useStore = defineStore('counter', () => {
     effectsData,
     sticker,
     frame,
+    text,
     handleEffects,
     activeFilterValue
   }

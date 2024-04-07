@@ -96,7 +96,9 @@ const initCamera = async () => {
             width,
             height,
           });
-          if (resizedDetections.length === 0) return;
+          //如果找不到人脸就清除画布
+          if (resizedDetections.length === 0)
+            return ctx.clearRect(0, 0, width, height);
           const landmarks = resizedDetections[0].landmarks;
           const { width: boxWidth } = resizedDetections[0].detection.box;
           // 计算脸部在屏幕中的宽度和高度的比例
@@ -110,15 +112,25 @@ const initCamera = async () => {
             ctx,
             faceWidthToHeightRatio
           );
-          // draw.drawContour(ctx, landmarks.positions);
+
+          if (state.effectsData === "mianju") {
+            ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+            draw.drawContour(ctx, landmarks.getRightEye());
+            draw.drawContour(ctx, landmarks.getRightEyeBrow());
+            draw.drawContour(ctx, landmarks.getLeftEye());
+            draw.drawContour(ctx, landmarks.getLeftEyeBrow());
+            draw.drawContour(ctx, landmarks.getMouth());
+            draw.drawContour(ctx, landmarks.getNose());
+            draw.drawContour(ctx, landmarks.getJawOutline());
+          }
+
           //在边框
           // draw.drawDetections(faceContour, resizedDetections);
           //人脸识别
           // draw.drawFaceLandmarks(faceContour, resizedDetections);
           //表情识别
           // draw.drawFaceExpressions(faceContour, resizedDetections);
-          //岁数和性别
-        }, 90);
+        }, 60);
       } catch (error) {
         console.error("模型加载失败：", error);
       }
@@ -351,7 +363,6 @@ const photograph = () => {
   const data = dataURL.replace(/^data:image\/\w+;base64,/, "");
 
   window.myElectron.photograph(data).then((res) => {
-    console.log(`lzy  res:`, res);
     if (res === "Error") return;
     ElNotification.closeAll();
     ElNotification({
@@ -371,17 +382,16 @@ const photograph = () => {
 };
 
 //在视频中添加贴纸
-const addSticker = () => {
+const addSticker = (type: "sticker" | "text") => {
   const canvas = canvasStickerContour.value!;
-  console.log(`lzy  canvas:`, canvas);
   const ctx = canvas.getContext("2d")!;
   const { width, height } = canvas;
 
-  const { sticker } = state;
-  if (sticker === "notSticker") return ctx.clearRect(0, 0, width, height);
+  if (state[type] === "notSticker" || state[type] === "notText")
+    return ctx.clearRect(0, 0, width, height);
   const img = new Image();
   img.src = new URL(
-    `../assets/images/sticker/${sticker}.png`,
+    `../assets/images/${type}/${state[type]}.png`,
     import.meta.url
   ).href;
   img.onload = () => {
@@ -409,14 +419,12 @@ const addSticker = () => {
     }
 
     canvas.onmousemove = (e) => {
-      console.log(e.offsetX, x);
       if (!flag) return;
       let moveX = e.offsetX - x + stpX;
       moveX = moveX < 0 ? 0 : moveX; // 限制贴纸的移动范围
       moveX = moveX > width - 200 ? width - 200 : moveX;
       let moveY = e.offsetY - y + stpY;
       moveY = moveY < 0 ? 0 : moveY;
-      console.log(`lzy   moveX, moveY:`, moveX, moveY);
       ctx.clearRect(0, 0, width, height);
       ctx.drawImage(img, moveX, moveY, 200, 200);
       // 记录贴纸的位置
@@ -429,6 +437,10 @@ const addSticker = () => {
     canvas.onmouseup = (e) => {
       flag = false;
       canvas.onmousemove = null;
+    };
+    //鼠标移出画布时 关闭flag
+    canvas.onmouseleave = (e) => {
+      flag = false;
     };
   };
 };
@@ -490,7 +502,6 @@ const watermark = () => {
   }
 };
 nextTick(() => {
-  initCamera();
   //视频宽度默认为父元素宽度
   // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 20 || 640;
 });
@@ -504,7 +515,13 @@ watch(
 watch(
   () => state.sticker,
   () => {
-    addSticker();
+    addSticker("sticker");
+  }
+);
+watch(
+  () => state.text,
+  () => {
+    addSticker("text");
   }
 );
 watch(
@@ -514,7 +531,8 @@ watch(
   }
 );
 
-onMounted(() => {
+onMounted(async () => {
+  initCamera();
   watermark();
 });
 

@@ -45,9 +45,9 @@ export default {
     ctx.drawImage(
       maskImgLeftEye,
       leftEye[0].x - 15,
-      leftEye[0].y - 15,
-      222 * 0.3,
-      129 * 0.3
+      leftEye[0].y - 50,
+      90 * 0.7,
+      120 * 0.7
     );
     //将蒙版眼睛绘制在人脸上 右眼
     const maskImgRightEye = await imageLoader.loadImage("src/assets/images/Effects/rightEye.png");
@@ -56,9 +56,9 @@ export default {
     ctx.drawImage(
       maskImgRightEye,
       rightEye[0].x - 15,
-      rightEye[0].y - 20,
-      212 * 0.3,
-      151 * 0.3
+      rightEye[0].y - 50,
+      90 * 0.7,
+      120 * 0.7
     );
     //将蒙版嘴巴绘制在人脸上
     const maskImgMouth = await imageLoader.loadImage("src/assets/images/Effects/mouth.png");
@@ -66,21 +66,35 @@ export default {
     const mouth = getParas.getMouth();
     ctx.drawImage(
       maskImgMouth,
-      mouth[0].x - 15,
-      mouth[0].y - 15,
-      252 * 0.5,
-      111 * 0.5
+      mouth[0].x - 10,
+      mouth[0].y - 10,
+      252 * 0.3,
+      111 * 0.3
     );
-    //将蒙版眉毛绘制在人脸上
-    const maskImgRightEyeBrow = await imageLoader.loadImage("src/assets/images/Effects/rightEyeBrow.png");
-    maskImgRightEyeBrow.src = "src/assets/images/Effects/rightEyeBrow.png";
-    const rightEyeBrow = getParas.getRightEyeBrow();
+
+    //将蒙版脸颊绘制在人脸上
+    const maskImgCheekLeft = await imageLoader.loadImage("src/assets/images/Effects/cheekLeft.png");
+    maskImgCheekLeft.src = "src/assets/images/Effects/cheekLeft.png";
+    const cheekLeft = getParas.getLeftEye();
+    const noseLeft = getParas.getNose();
     ctx.drawImage(
-      maskImgRightEyeBrow,
-      rightEyeBrow[0].x + 15,
-      rightEyeBrow[0].y - 45,
-      164 * 0.3,
-      162 * 0.3
+      maskImgCheekLeft,
+      cheekLeft[0].x - 20,
+      noseLeft[Math.floor((noseLeft.length - 1) / 2)].y,
+      40 * 0.7,
+      25 * 0.7
+    );
+    //将蒙版脸颊绘制在人脸上
+    const maskImgCheekRight = await imageLoader.loadImage("src/assets/images/Effects/cheekRight.png");
+    maskImgCheekRight.src = "src/assets/images/Effects/cheekRight.png";
+    const cheekRight = getParas.getRightEye();
+    const noseRight = getParas.getNose();
+    ctx.drawImage(
+      maskImgCheekLeft,
+      cheekRight[0].x + 20,
+      noseRight[Math.floor((noseRight.length - 1) / 2)].y,
+      40 * 0.7,
+      25 * 0.7
     );
   },
   cat: async function (faceContour, ctx, getParas, sizeMultiple) {
@@ -135,18 +149,7 @@ export default {
     };
     light()
   },
-  theForeheadFont: function (ctx, getParas) {
-    ctx.font = "30px dindin";
-    ctx.fillStyle = "#fff";
-    // 绘制文本，应用阴影
-    // ctx.shadowColor = "#000"; // 阴影颜色
-    // ctx.shadowOffsetX = 2; // 阴影在 x 轴上的偏移
-    // ctx.shadowOffsetY = 2; // 阴影在 y 轴上的偏移
-    // ctx.shadowBlur = 10; // 阴影的模糊程度
-    ctx.fillText("我叫徐志伟", getParas.positions[0].x + 40, getParas.positions[0].y - 100);
-  },
   mask: function (ctx, getParas) {
-    console.log(`lzy  getParas:`, getParas)
     // 绘制人脸轮廓
     const faceContourData = getParas.getJawOutline();
     for (let i = 1; i < faceContourData.length - 1; i++) {

@@ -4,20 +4,16 @@ import dogEffects from "@/assets/images/Effects/dogHeadEffects.png";
 import angerEffects from "@/assets/images/Effects/angerEffects.png";
 import lightningEffects from "@/assets/images/Effects/lightningEffects.png";
 import mask from "@/assets/images/Effects/mackEffects.png";
+import mianju from "@/assets/images/Effects/mianju.png";
 import { useStore } from "@/store/store";
 const state = useStore();
 const arr = [
   { name: "cat", title: "猫耳", image: catEffects },
   { name: "dogHead", title: "狗头", image: dogEffects },
-  { name: "anger", title: "愤怒表情", image: angerEffects },
+  { name: "anger", title: "可爱表情", image: angerEffects },
   { name: "lightning", title: "张嘴放电", image: lightningEffects },
   { name: "mask", title: "口罩", image: mask },
-  // { name: '中值滤波', title: '中值滤波', image: '' },
-  // { name: '高斯模糊', title: '高斯模糊', image: '' },
-  // { name: '色彩增强', title: '色彩增强', image: '' },
-  // { name: '像素化', title: '像素化', image: '' },
-  // { name: '膨胀', title: '膨胀', image: '' },
-  // { name: '腐蚀', title: '腐蚀', image: '' },
+  { name: "mianju", title: "边框面具", image: mianju },
 ];
 const applyFilter = (filterName) => {
   state.effectsData =
