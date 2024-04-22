@@ -75,7 +75,6 @@ function changeTone(param, data, i) {
     // }
     hsl[2] = newL;
   }
-
   // 从 HLS 转换回 RGB
   const newColor = hslToRgb(hsl);
   // if (offset % 10000 == 0) {
@@ -288,7 +287,7 @@ function changeFilter(filterActive, data, i, canvasWidth, canvasHeight) {
       break;
     case 'sharpening':
       // 锐化滤镜
-      
+
       break;
     default:
       break;

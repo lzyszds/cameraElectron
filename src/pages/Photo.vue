@@ -163,7 +163,7 @@ const canvasWidth = computed(() => {
   if (desiredAspectRatio.value > 1) {
     return 900;
   } else {
-    return 480;
+    return 720;
   }
 });
 const canvasHeight = computed(() => {
@@ -506,7 +506,7 @@ const watermark = () => {
 };
 nextTick(() => {
   //视频宽度默认为父元素宽度
-  // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 20 || 640;
+  // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 20 || 1280;
 });
 
 watch(
@@ -542,9 +542,9 @@ onMounted(async () => {
 // canvasWidth随着页面宽度变化而变化
 useEventListener("resize", () => {
   // 最大最小值
-  // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 640;
+  // canvasWidth.value = canvasElement.value?.parentElement!.offsetWidth! - 100 || 1280;
   // if (canvasWidth.value > 1180) canvasWidth.value = 1180;
-  // if (canvasWidth.value < 640) canvasWidth.value = 640;
+  // if (canvasWidth.value < 1280) canvasWidth.value = 1280;
 });
 
 onBeforeUnmount(() => {
@@ -572,8 +572,8 @@ onBeforeUnmount(() => {
         <canvas
           class="border-double bg-black border-2 m-auto max-h-[700px]"
           ref="canvasElement"
-          :width="640"
-          :height="480"
+          :width="1280"
+          :height="720"
           :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
         >
         </canvas>
@@ -581,29 +581,29 @@ onBeforeUnmount(() => {
         <canvas
           class="canvasFaceContour"
           ref="canvasFaceContour"
-          :width="640"
-          :height="480"
+          :width="1280"
+          :height="720"
         ></canvas>
         <!-- 文字图层 -->
         <canvas
           class="canvasTextContour"
           ref="canvasTextContour"
-          :width="640"
-          :height="480"
+          :width="1280"
+          :height="720"
         ></canvas>
         <!-- 贴纸图层 -->
         <canvas
           class="canvasStickerContour"
           ref="canvasStickerContour"
-          :width="640"
-          :height="480"
+          :width="1280"
+          :height="720"
           style="opacity: 0"
         ></canvas>
         <!-- 水印图层 -->
         <canvas
           class="canvasWaterContour"
           ref="canvasWaterContour"
-          :width="640"
+          :width="1280"
           :height="50"
         ></canvas>
       </div>

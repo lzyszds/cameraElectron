@@ -32,15 +32,18 @@ const componentsItems = {
   user-select: none;
   position: relative;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.1);
-
   h3 {
     margin: 0 0 10px 0;
+  }
+  &:hover {
+    border-color: var(--themeColor) !important;
   }
 }
 
 @media (prefers-color-scheme: dark) {
   .actionItemCard {
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 2px 4px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1),
+      0 2px 4px rgba(255, 255, 255, 0.1);
   }
 }
 </style>
