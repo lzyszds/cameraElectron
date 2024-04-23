@@ -26,12 +26,11 @@ export default {
   },
 
   dogHead: async function (ctx, getParas, sizeMulitple) {
-    console.log(`lzy  getParas:`, getParas)
     const dogHead = await imageLoader.loadImage("src/assets/images/Effects/dogHead.png");
     dogHead.src = "src/assets/images/Effects/dogHead.png";
     ctx.drawImage(
       dogHead,
-      getParas.shift.x + (30 * sizeMulitple),
+      getParas.shift.x + (30 * sizeMulitple) + 20,
       getParas.shift.y - (250 * sizeMulitple),
       597 * sizeMulitple,
       783 * sizeMulitple

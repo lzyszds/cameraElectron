@@ -154,22 +154,6 @@ const initCamera = async () => {
   }
 };
 
-// 设置期望的宽高比，比如 16:9，4:3 等
-const desiredAspectRatio = computed(() =>
-  eval(state.ratioVideoData.replace(":", "/"))
-) as Ref<number>;
-// 根据实际宽高比和期望宽高比来计算画布的宽高
-const canvasWidth = computed(() => {
-  if (desiredAspectRatio.value > 1) {
-    return 900;
-  } else {
-    return 720;
-  }
-});
-const canvasHeight = computed(() => {
-  return canvasWidth.value / desiredAspectRatio.value;
-});
-
 // 使用 Web Workers 处理图像数据
 const worker = new Worker("/src/utils/worker.js");
 
@@ -178,6 +162,7 @@ const renderToCanvas = async () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
   const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
+  console.log(`lzy  x, y, newWidth, newHeight:`, x, y, newWidth, newHeight);
 
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
   // 在 OffscreenCanvas 中渲染视频帧
@@ -223,9 +208,6 @@ const renderToCanvas = async () => {
     const processedImageData = event.data;
     // 清除 Canvas 内容
     context.clearRect(0, 0, newWidth, newHeight);
-
-    // 计算旋转角度
-    const angle = -90 * (Math.PI / 180); // 将角度转换为弧度并取反
 
     context!.putImageData(processedImageData, 0, 0);
     //将贴纸画布放置在视频上面
@@ -565,38 +547,38 @@ onBeforeUnmount(() => {
     <ActionBar :activeTool="activeTool"> </ActionBar>
     <!-- 主体内容 -->
     <div
-      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[1fr_32px_minmax(100px,1fr)] gap-3"
+      class="h-[calc(100vh-50px)] select-none pt-0 pb-1 px-1 overflow-hidden grid grid-rows-[minmax(500px,1fr)_32px_minmax(100px,1fr)] gap-3"
     >
       <div class="canvas-container">
         <!-- 录像图层 -->
         <canvas
-          class="border-double bg-black border-2 m-auto max-h-[700px]"
+          class="border-double bg-black border-2 m-auto max-h-[480px]"
           ref="canvasElement"
-          :width="1280"
-          :height="720"
+          :width="720"
+          :height="480"
           :class="hasStartFlag ? 'border-red-500' : 'border-transparent'"
         >
         </canvas>
         <!-- 人脸识别图层 -->
         <canvas
-          class="canvasFaceContour"
+          class="canvasFaceContour hidden"
           ref="canvasFaceContour"
-          :width="1280"
-          :height="720"
+          :width="720"
+          :height="480"
         ></canvas>
         <!-- 文字图层 -->
         <canvas
           class="canvasTextContour"
           ref="canvasTextContour"
-          :width="1280"
-          :height="720"
+          :width="720"
+          :height="480"
         ></canvas>
         <!-- 贴纸图层 -->
         <canvas
           class="canvasStickerContour"
           ref="canvasStickerContour"
-          :width="1280"
-          :height="720"
+          :width="720"
+          :height="480"
           style="opacity: 0"
         ></canvas>
         <!-- 水印图层 -->
@@ -608,11 +590,11 @@ onBeforeUnmount(() => {
         ></canvas>
       </div>
       <video
-        :width="canvasWidth"
-        :height="canvasHeight"
+        :width="1280"
+        :height="720"
         class="object-contain"
         ref="videoElement"
-        style="display: none"
+        style="display: none; height: 720px"
         autoplay
         src="../assets/images/VeryCapture_20230811171452.mp4"
       ></video>
@@ -664,6 +646,7 @@ onBeforeUnmount(() => {
 <style lang="scss">
 .canvas-container {
   position: relative;
+  overflow: hidden;
 }
 
 .canvasFaceContour,

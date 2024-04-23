@@ -10,8 +10,8 @@ interface Props {
   min?: number; //最小值
   max?: number; //最大值
   background?: string; //背景色
-  sliderColor?: string;//滑块色
-  textColor: string;//文字颜色
+  sliderColor?: string; //滑块色
+  textColor: string; //文字颜色
 }
 const props = defineProps({
   value: {
@@ -72,7 +72,14 @@ const style = computed(() => {
 <template>
   <label class="lzy_slider" :style="style">
     <span style="">{{ name }}</span>
-    <input @input="handlePace" v-model="pace" :min="props.min" :max="props.max" type="range" class="lzy_level" />
+    <input
+      @input="handlePace"
+      v-model="pace"
+      :min="props.min"
+      :max="props.max"
+      type="range"
+      class="lzy_level"
+    />
     <input type="number" :min="props.min" :max="props.max" v-model="pace" />
   </label>
 </template>

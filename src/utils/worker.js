@@ -1,3 +1,4 @@
+
 // 在 worker.js 文件中进行图像处理
 // 处理滤镜问题，在主渲染进程中进行滤镜计算会导致页面其他功能卡顿
 // 十分影响用户体验，所以我将滤镜计算放到 Web Worker 中进行
@@ -6,7 +7,7 @@ onmessage = (event) => {
   const data = imageData.data;
   // 将参数转换为百分比
   fillterAgg.contrast /= 100;
-  fillterAgg.light /= 5;
+  fillterAgg.light /= 100;
   // fillterAgg.saturation /= 100;
   fillterAgg.hue /= 100;
   beautyAgg.beauty /= 100;
@@ -36,53 +37,47 @@ onmessage = (event) => {
  * 与RGB相比，HSL更接近人类对颜色的感知
  * 使得调整颜色变得更加直观和易于理解
  */
-function changeTone(param, data, i) {
-  if (param.hue === 0 && param.saturation === 0 && param.light === 0) {
-    return;
-  }
-  // 从 RGB 转换为 HLS
-  const r = data[i];
-  const g = data[i + 1];
-  const b = data[i + 2];
-  const from = [r, g, b];
+function changeTone(param, dataArray, offset) {
+  // 从 rgb 转成成 hls
+  let r = dataArray[offset];
+  let g = dataArray[offset + 1];
+  let b = dataArray[offset + 2];
+  let from = [r, g, b];
+  let hsl = RGB2HSL(from)
 
-  const hsl = rgbToHsl(from);
-
-  // 处理色调
-  if (param.hue && param.hue !== 0) {
-    // 色调的区间 [0, 360]
-    const hueOffset = param.hue * 360; // 将百分比转化为 [-180, 180] 的角度偏移
-    let hue = (hsl[0] + hueOffset).toFixed(2);
+  //处理 色度
+  if (param.hue && param.hue != 0) {
+    // delta 的区间 [-360,360]
+    const delta = parseInt(param.hue * 360);
+    let hue = hsl[0] + delta;
+    if (hue < 0) hue = 0;
+    if (hue > 360) hue = 360;
     hsl[0] = hue;
   }
-
-  // 处理饱和度
-  if (param.saturation && param.saturation !== 0) {
-    // 饱和度的区间 [-0.5, 0.5]
-    const delta = param.saturation;
-    // 将百分比转化为 [0, 100] 的饱和度
-    let saturation = (hsl[1] + delta).toFixed(2);
-    hsl[1] = saturation
+  // 处理 饱和度
+  if (param.saturation && param.saturation != 0) {
+    // delta 的区间 [-100,100]
+    const delta = parseInt(param.saturation * 100);
+    let saturation = hsl[1] + delta;
+    if (saturation < 0) saturation = 0;
+    if (saturation > 100) hue = saturation;
+    hsl[1] = saturation;
+  }
+  // 处理 亮度
+  if (param.light && param.light != 0) {
+    // delta 的区间 [-100,100]
+    const delta = parseInt(param.light * 100);
+    let lightness = hsl[2] + delta;
+    if (lightness < 0) lightness = 0;
+    if (lightness > 100) hue = lightness;
+    hsl[2] = lightness;
   }
 
-  // 处理亮度
-  if (param.light && param.light !== 0) {
-    // 亮度的区间 [-0.5, 0.5]
-    const delta = param.light
-    const newL = Math.min(Math.max(hsl[2] + delta, 0), 100); // 限制亮度值在0到100之间
-    // if (i % 10000 == 0) {
-    //   console.log(hsl[2], delta, newL)
-    // }
-    hsl[2] = newL;
-  }
-  // 从 HLS 转换回 RGB
-  const newColor = hslToRgb(hsl);
-  // if (offset % 10000 == 0) {
-  //   console.log( hsl, newColor);
-  // }
-  data[i] = newColor[0];
-  data[i + 1] = newColor[1];
-  data[i + 2] = newColor[2];
+  // 从 hls 转回去 rgb
+  let newColor = HSL2RGB(hsl);
+  dataArray[offset] = newColor[0];
+  dataArray[offset + 1] = newColor[1];
+  dataArray[offset + 2] = newColor[2];
 }
 
 
@@ -105,40 +100,22 @@ function getGrayAverage(imagePixArray) {
 }
 
 // 对每个像素点 调节 对比度
-function makeContrast(data, average, contrast) {
-  const pixCount = data.length / 4;
-
+function makeContrast(dataArray, average, contrast) {
+  let pixCount = dataArray.length / 4;
   for (let i = 0; i < pixCount; i++) {
     const pixOffset = i * 4;
-    let r = data[pixOffset];
-    let g = data[pixOffset + 1];
-    let b = data[pixOffset + 2];
-
-    let newR = r + ((r - average) * contrast) / 255;
-    let newG = g + ((g - average) * contrast) / 255;
-    let newB = b + ((b - average) * contrast) / 255;
-
-    if (newR < 0) {
-      newR = 0;
-    } else if (newR > 255) {
-      newR = 255;
-    }
-
-    if (newG < 0) {
-      newG = 0;
-    } else if (newG > 255) {
-      newG = 255;
-    }
-
-    if (newB < 0) {
-      newB = 0;
-    } else if (newB > 255) {
-      newB = 255;
-    }
-
-    data[pixOffset] = newR;
-    data[pixOffset + 1] = newG;
-    data[pixOffset + 2] = newB;
+    let r = dataArray[pixOffset];
+    let g = dataArray[pixOffset + 1];
+    let b = dataArray[pixOffset + 2];
+    let newR = r + (r - average) * contrast / 255
+    let newG = g + (g - average) * contrast / 255
+    let newB = b + (b - average) * contrast / 255
+    if (newR < 0) newR = 0; if (newR > 255) newR = 255;
+    if (newG < 0) newG = 0; if (newG > 255) newG = 255;
+    if (newB < 0) newB = 0; if (newB > 255) newR = 255;
+    dataArray[pixOffset] = newR;
+    dataArray[pixOffset + 1] = newG;
+    dataArray[pixOffset + 2] = newB;
   }
 }
 
@@ -295,3 +272,66 @@ function changeFilter(filterActive, data, i, canvasWidth, canvasHeight) {
 
 }
 
+function RGB2HSL(a) {
+  var b,
+    c,
+    d,
+    e = Math.max(Math.min(parseInt(a[0], 10) / 255, 1), 0),
+    f = Math.max(Math.min(parseInt(a[1], 10) / 255, 1), 0),
+    g = Math.max(Math.min(parseInt(a[2], 10) / 255, 1), 0),
+    h = Math.max(e, f, g),
+    i = Math.min(e, f, g),
+    j = (h + i) / 2;
+  return (
+    h !== i
+      ? ((b = h - i),
+        (d = j > 0.5 ? b / (2 - h - i) : b / (h + i)),
+        (c =
+          h === e
+            ? (f - g) / b + (g > f ? 6 : 0)
+            : h === f
+              ? (g - e) / b + 2
+              : (e - f) / b + 4),
+        (c /= 6))
+      : (c = d = 0),
+    [Math.round(360 * c), Math.round(100 * d), Math.round(100 * j)]
+  );
+}
+
+function HSL2RGB(a) {
+  "use strict";
+  var b, c, d, e, f, g, h, i, j,
+    k = Math.max(Math.min(parseInt(a[0], 10), 360), 0) / 360,
+    l = Math.max(Math.min(parseInt(a[1], 10), 100), 0) / 100,
+    m = Math.max(Math.min(parseInt(a[2], 10), 100), 0) / 100;
+  if (((b = 0.5 >= m ? m * (1 + l) : m + l - m * l), 0 === b))
+    return [0, 0, 0];
+  switch (
+  ((c = 2 * m - b),
+    (d = (b - c) / b),
+    (k = 6 * k),
+    (e = Math.floor(k)),
+    (f = k - e),
+    (g = b * d * f),
+    e)
+  ) {
+    case 1:
+      (h = b - g), (i = b), (j = c);
+      break;
+    case 2:
+      (h = c), (i = b), (j = c + g);
+      break;
+    case 3:
+      (h = c), (i = b - g), (j = b);
+      break;
+    case 4:
+      (h = c + g), (i = c), (j = b);
+      break;
+    case 5:
+      (h = b), (i = c), (j = b - g);
+      break;
+    default:
+      (h = b), (i = c + g), (j = c);
+  }
+  return [Math.round(255 * h), Math.round(255 * i), Math.round(255 * j)];
+}

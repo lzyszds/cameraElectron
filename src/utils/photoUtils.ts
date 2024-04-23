@@ -58,14 +58,6 @@ export function resizeRatio(videoElement, canvasElement) {
   let newWidth = canvasElement!.width;
   let newHeight = canvasElement!.height;
 
-  if (aspectRatio > 1) {
-    // 宽度较大，根据 Canvas 宽度计算适配高度
-    newHeight = canvasElement!.width / aspectRatio;
-  } else {
-    // 高度较大，根据 Canvas 高度计算适配宽度
-    newWidth = canvasElement!.height * aspectRatio;
-  }
-
   // 计算视频在 Canvas 中的居中位置
   const x = (canvasElement!.width - newWidth) / 2;
   const y = (canvasElement!.height - newHeight) / 2;
