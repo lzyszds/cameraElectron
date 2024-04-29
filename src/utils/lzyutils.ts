@@ -7,9 +7,6 @@ interface SplitArrayReturnType<T> {
   data: T[][];
 }
 
-type TimeRule = (n: number) => boolean;
-type TimeRuleFunction = (n: number) => string;
-
 
 // 此函数获取一个数组并将其拆分为更小的块
 export function splitArray<T>(array: T[], size: number): SplitArrayReturnType<T> {
@@ -364,17 +361,6 @@ export function debounceRef<T>(value: T, duration: number = 1000) {
     }
   })
 }
-/**
- * 检测资源变化 如果系统更新了资源，就重新加载页面，提示用户 
- */
-export async function watchResourceChange(duration: number = 1000) {
-  const res = await fetch('/?_timerstamp=' + dayjs().unix())
-  const text = await res.text()
-  const scriptSrcRegex = /<script\b[^<]*\bsrc=["']([^"']+)["'][^<]*<\/script>/gi;
-  const matches = text.match(scriptSrcRegex);
-  const scriptUrls = matches?.map((match) => match.replace(scriptSrcRegex, '$1'));
-  console.log(scriptUrls);
-}
 
 
 export default {
@@ -398,5 +384,4 @@ export default {
   imageLoader,
   setTimeoutAsync,
   debounceRef,
-  watchResourceChange
 };

@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { mkdirsSync, checkFileFoundError } from '../utils/utils'; // 假设您有一个名为 'utils' 的模块用于创建目录
 import { startRecordShortcut } from './keyboard'
+import ffmpeg from 'fluent-ffmpeg';
 
 
 /**
@@ -123,7 +124,7 @@ export class WindowManager {
 
   // 保存视频逻辑
   private saveDeviceVideo(event: Electron.IpcMainInvokeEvent, arg: any): Promise<string> {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         let filePath = '';
 
@@ -138,12 +139,18 @@ export class WindowManager {
 
         const timestamp = new Date().getTime();
         const randomStr = Math.random().toString(36).substr(2, 5);
-        const fileName = `\\video${timestamp}${randomStr}.webm`;
-        filePath += fileName;
-        console.log(`lzy  filePath:`, filePath)
-
-        fs.writeFileSync(filePath, Buffer.from(arg.arrayBuffer));
-        resolve(filePath)
+        const fileName = `\\video${timestamp}${randomStr}`;
+        // 转换后,你想保存的文件名和位置
+        await fs.writeFileSync(filePath + fileName + '.webm', Buffer.from(arg.arrayBuffer));
+        ffmpeg(filePath + fileName + '.webm')
+          .outputOptions('-c:v libx264') // 使用 libx264 编码
+          .output(filePath + fileName + '.mp4') // 输出文件路径
+          .on('end', () => {
+            fs.unlinkSync(filePath + fileName + '.webm');
+            resolve(filePath + fileName + '.mp4')
+          })
+          .on('error', reject)
+          .run();
       } catch (e) {
         reject(e)
       }

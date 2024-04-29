@@ -75,13 +75,13 @@ export default defineConfig(({ command }) => {
       // Use Node.js API in the Renderer-process
       renderer(),
     ],
-    server: process.env.VSCODE_DEBUG && (() => {
+    server: process.env.VSCODE_DEBUG ? (() => {
       const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL)
       return {
         host: url.hostname,
         port: +url.port,
       }
-    })(),
+    })() : undefined,
     clearScreen: false,
     resolve: {
       alias: {
@@ -91,3 +91,4 @@ export default defineConfig(({ command }) => {
     },
   }
 })
+

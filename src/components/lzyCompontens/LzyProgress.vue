@@ -77,6 +77,7 @@ const style = computed(() => {
       v-model="pace"
       :min="props.min"
       :max="props.max"
+      step="0.01"
       type="range"
       class="lzy_level"
     />

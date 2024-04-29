@@ -97,6 +97,7 @@ export default {
     );
   },
   cat: async function (faceContour, ctx, getParas, sizeMultiple) {
+    console.log(`lzy  faceContour:`, faceContour)
     const getLeftEye = getParas.getLeftEye();
     const nose = getParas.getNose();
     const height = nose[Math.floor((nose.length - 1) / 2)].y;

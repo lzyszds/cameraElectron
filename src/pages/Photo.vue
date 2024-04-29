@@ -6,7 +6,7 @@ import { useEventListener, useStorage, useSessionStorage } from "@vueuse/core";
 
 import { ElNotification, dayjs } from "element-plus";
 import { useStore } from "@/store/store";
-import { formatDuration, watchResourceChange } from "@/utils/lzyutils";
+import { formatDuration } from "@/utils/lzyutils";
 
 import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
@@ -18,10 +18,7 @@ import {
   detectAllFaces,
   resizeResults,
   draw,
-  matchDimensions,
 } from "face-api.js";
-
-await watchResourceChange();
 
 const state = useStore();
 
@@ -162,7 +159,6 @@ const renderToCanvas = async () => {
   const video = videoElement.value!;
   const canvas = canvasElement.value!;
   const { x, y, newWidth, newHeight } = resizeRatio(video, canvas);
-  console.log(`lzy  x, y, newWidth, newHeight:`, x, y, newWidth, newHeight);
 
   const context = canvas.getContext("2d", { willReadFrequently: true })!;
   // 在 OffscreenCanvas 中渲染视频帧
@@ -170,6 +166,23 @@ const renderToCanvas = async () => {
   const offscreenContext = offscreenCanvas.getContext("2d", {
     willReadFrequently: true,
   }) as OffscreenCanvasRenderingContext2D;
+  // 确保在每次开始新绘制之前都重设了转换。
+  offscreenContext.setTransform(1, 0, 0, 1, 0, 0);
+
+  // 将原点移动到画布中点。
+  offscreenContext.translate(
+    canvasElement.value!.width / 2,
+    canvasElement.value!.height / 2
+  );
+
+  // 沿 Y 轴反转
+  offscreenContext.scale(-1, 1);
+
+  // 将原点移回
+  offscreenContext.translate(
+    -canvasElement.value!.width / 2,
+    -canvasElement.value!.height / 2
+  );
 
   // 绘制视频图层
   offscreenContext.drawImage(video, x, y, newWidth, newHeight);
@@ -236,8 +249,17 @@ const startRecording = () => {
     mediaParas.mediaRecorder = new MediaRecorder(
       canvasElement.value!.captureStream()
     );
-    mediaParas.mediaRecorder.ondataavailable = handleDataAvailable;
     mediaParas.mediaRecorder.start();
+    // 处理录制的数据块
+    mediaParas.mediaRecorder.ondataavailable = (event: BlobEvent) => {
+      mediaParas.chunks = [];
+      if (event.data.size > 0) {
+        mediaParas.chunks.push(event.data);
+        mediaParas.fileSize = event.data.size;
+        //弹出窗口，让用户确认存储地址
+        // sendBlobToMainProcess();
+      }
+    };
     hasStartFlag.value = true;
     interTimefn = setInterval(() => {
       mediaParas.time++;
@@ -248,7 +270,6 @@ const startRecording = () => {
     mediaParas.time = 0;
   }
 };
-
 const videoFileData = reactive<videoFileDataType>({
   fileName: "",
   createTime: "",
@@ -262,33 +283,27 @@ const stopRecording = () => {
     hasStartFlag.value = false;
     const timestamp = new Date().getTime();
     const randomStr = Math.random().toString(36).substr(2, 5);
-    videoFileData.fileName = `video${timestamp}${randomStr}.webm`;
+    videoFileData.fileName = `video${timestamp}${randomStr}.mp4`;
     videoFileData.createTime = dayjs().format("YYYY-MM-DD HH:mm:ss");
   }
 };
 
-// 处理录制的数据块
-const handleDataAvailable = (event: BlobEvent) => {
-  mediaParas.chunks = [];
-  if (event.data.size > 0) {
-    mediaParas.chunks.push(event.data);
-    mediaParas.fileSize = event.data.size;
-    //弹出窗口，让用户确认存储地址
-    // sendBlobToMainProcess();
-  }
-};
 //保存视频/* isSaveAs 是否另存为 */
 function sendBlobToMainProcess(isSaveAs) {
   // 将 Blob 数据转换为 ArrayBuffer 或 Base64 字符串
   // 这里使用 ArrayBuffer 作为示例，你可以根据需要选择其他方式
   if (mediaParas.chunks.length > 0) {
-    const blobData = new Blob(mediaParas.chunks, { type: "video/webm" });
+    const blobData = new Blob(mediaParas.chunks, { type: "video/mp4" });
     const reader = new FileReader();
     reader.onload = () => {
       const arrayBuffer = reader.result;
       // 发送 Blob 数据给主进程
       window.myElectron
-        .saveDeviceVideo({ arrayBuffer, isSaveAs })
+        .saveDeviceVideo({
+          arrayBuffer,
+          isSaveAs,
+          fileName: videoFileData.fileName,
+        })
         .then((res) => {
           if (res === "Error") return;
           saveSuccess(res); //保存成功后
@@ -342,13 +357,23 @@ const changeTools = (val: string) => {
   activeTool.value = val;
 };
 //拍照功能
+/**
+ * 拍照功能实现，利用HTML5 Canvas技术获取图片数据，并通过与Electron的交互保存图片。
+ * 该函数首先将Canvas转换为数据URL，然后去除数据URL的头部信息，仅保留Base64编码的数据部分。
+ * 之后，调用Electron的`photograph`方法，传递Base64编码的图片数据，以保存图片。
+ * 保存成功后，会显示通知，并将图片的元数据添加到存储列表中。
+ */
 const photograph = () => {
+  // 获取Canvas元素，并将其转换为数据URL
   const canvas = canvasElement.value!;
   const dataURL = canvas.toDataURL("image/png");
+  // 从数据URL中提取Base64编码的图片数据
   const data = dataURL.replace(/^data:image\/\w+;base64,/, "");
 
+  // 调用Electron的图片保存方法，并处理返回结果
   window.myElectron.photograph(data).then((res) => {
-    if (res === "Error") return;
+    if (res === "Error") return; // 如果保存出错，则不执行后续操作
+    // 关闭所有通知，然后显示保存成功的通知
     ElNotification.closeAll();
     ElNotification({
       title: "保存成功",
@@ -356,6 +381,7 @@ const photograph = () => {
       type: "success",
       duration: 1000,
     });
+    // 准备图片的元数据，并添加到存储列表中
     const data = {
       fileName: res.fileName,
       createTime: dayjs().format("YYYY-MM-DD HH:mm:ss"),

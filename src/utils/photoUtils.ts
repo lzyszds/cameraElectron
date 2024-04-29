@@ -50,11 +50,8 @@ export function resizeRatio(videoElement, canvasElement) {
     newWidth: 0,
     newHeight: 0,
   }
-  const originalWidth = videoElement!.videoWidth;
-  const originalHeight = videoElement!.videoHeight;
 
   // 计算视频在 Canvas 中的适配宽高
-  const aspectRatio = 16 / 10;
   let newWidth = canvasElement!.width;
   let newHeight = canvasElement!.height;
 

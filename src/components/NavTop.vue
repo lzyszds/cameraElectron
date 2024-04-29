@@ -8,10 +8,7 @@ const changeTheme = () => {
 };
 //最小化窗
 const minimize = async () => {
-  console.log(window.myElectron);
-  const res = await window.myElectron.onHandleWin("minimize");
-  //接收返回值
-  console.log(`lzy  res:`, res);
+  await window.myElectron.onHandleWin("minimize");
 };
 //最大化窗口
 const maximize = () => {
@@ -33,22 +30,44 @@ const close = () => {
 
 <template>
   <!-- 顶部导航栏 -->
-  <nav class="navbar drag font-size-20 flex justify-between w-full font-[alimama] select-none">
+  <nav
+    class="navbar drag font-size-20 flex justify-between w-full font-[alimama] select-none"
+  >
     <div class="flex p-[0.3em] items-center gap-1 no-drag">
-      <img src="/public/favicon.ico" width="24" height="24" class="rounded-full" />
+      <img src="/favicon.ico" width="24" height="24" class="rounded-full" />
       <span class="text-base text-shadow">影天技术</span>
     </div>
     <div class="grid grid-cols-4 w-48 no-drag">
-      <button class="windHandleBtn hover:bg-[var(--setWindBtnColor)]" @click="changeTheme">
-        <LzyIcon width="15px" height="15px" name="mdi:theme-light-dark"></LzyIcon>
+      <button
+        class="windHandleBtn hover:bg-[var(--setWindBtnColor)]"
+        @click="changeTheme"
+      >
+        <LzyIcon
+          width="15px"
+          height="15px"
+          name="mdi:theme-light-dark"
+        ></LzyIcon>
       </button>
-      <button class="windHandleBtn hover:bg-[var(--setWindBtnColor)]" @click="minimize">
+      <button
+        class="windHandleBtn hover:bg-[var(--setWindBtnColor)]"
+        @click="minimize"
+      >
         <LzyIcon name="mdi:horizontal-line"></LzyIcon>
       </button>
-      <button class="windHandleBtn hover:bg-[var(--setWindBtnColor)] simple" @click="maximize">
-        <LzyIcon width="15px" height="15px" :name="hasMaximize ? 'ph:copy-simple-bold' : 'ph:rectangle-bold'"></LzyIcon>
+      <button
+        class="windHandleBtn hover:bg-[var(--setWindBtnColor)] simple"
+        @click="maximize"
+      >
+        <LzyIcon
+          width="15px"
+          height="15px"
+          :name="hasMaximize ? 'ph:copy-simple-bold' : 'ph:rectangle-bold'"
+        ></LzyIcon>
       </button>
-      <button class="windHandleBtn hover:bg-[#c42b1c] hover:text-[#fff]" @click="close">
+      <button
+        class="windHandleBtn hover:bg-[#c42b1c] hover:text-[#fff]"
+        @click="close"
+      >
         <LzyIcon name="iconamoon:close-bold"></LzyIcon>
       </button>
     </div>

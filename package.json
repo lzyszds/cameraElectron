@@ -1,8 +1,10 @@
 {
-  "name": "electron-vue-vite",
-  "version": "2.0.0",
+  "name": "cameraElectron",
+  "version": "1.0.1",
   "main": "dist-electron/main/index.js",
-  "description": "Really simple Electron + Vue + Vite boilerplate.",
+  "description": "一个桌面端应用",
+  "author": "黎智勇.",
+  "homepage": "https://www.github.com/lzyszds",
   "license": "MIT",
   "private": true,
   "keywords": [
@@ -19,8 +21,40 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build && electron-builder",
-    "preview": "vite preview"
+    "build": "tsc && vite build && electron-builder && tsc --build --clean",
+    "electronBuild": "electron-builder --win",
+    "electronBuildLinux": "electron-builder --linux",
+    "clean": "tsc --build --clean"
+  },
+  "build": {
+    "productName": "cameraElectron",
+    "copyright": "Copyright © 2024 lzyszds ",
+    "directories": {
+      "output": "build"
+    },
+    "asar": true,
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "allowToChangeInstallationDirectory": true
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "asar": false,
+      "icon": "favicon.ico",
+      "compression": "maximum",
+      "artifactName": "cameraElectron_Setup_${version}.${ext}",
+      "extraResources": [
+        {
+          "from": "public/logo256.png",
+          "to": "build/win-unpacked/resources"
+        }
+      ]
+    }
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",
@@ -48,6 +82,7 @@
     "electron-win-state": "^1.1.22",
     "element-plus": "^2.3.8",
     "face-api.js": "^0.22.2",
+    "fluent-ffmpeg": "^2.1.2",
     "lodash": "^4.17.21",
     "lzyutils": "^1.0.2",
     "p5": "^1.7.0",

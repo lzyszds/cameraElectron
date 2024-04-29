@@ -37,8 +37,6 @@
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
     "tests/**/*.ts",
     "src/**/*.ts",
     "src/**/*.d.ts",

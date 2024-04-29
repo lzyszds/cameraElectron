@@ -8,8 +8,8 @@ onmessage = (event) => {
   // 将参数转换为百分比
   fillterAgg.contrast /= 100;
   fillterAgg.light /= 100;
-  // fillterAgg.saturation /= 100;
-  fillterAgg.hue /= 100;
+  fillterAgg.saturation /= 100;
+  fillterAgg.hue /= 30;
   beautyAgg.beauty /= 100;
   beautyAgg.blur /= 100;
   // 处理图像数据，这里使用你之前定义的 change_per_pix 函数
