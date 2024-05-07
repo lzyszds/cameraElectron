@@ -611,7 +611,7 @@ onBeforeUnmount(() => {
         <canvas
           class="canvasWaterContour"
           ref="canvasWaterContour"
-          :width="1280"
+          :width="720"
           :height="50"
         ></canvas>
       </div>
@@ -688,5 +688,6 @@ onBeforeUnmount(() => {
   bottom: 2px;
   left: 50%;
   translate: -50%;
+  visibility: hidden;
 }
 </style>
