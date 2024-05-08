@@ -62,7 +62,10 @@ const waterData = useSessionStorage("waterData", {
 const initCamera = async () => {
   // 设置媒体流的约束
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+      audio: true,
+    });
     if (videoElement.value) {
       videoElement.value.srcObject = stream;
     }
@@ -245,7 +248,9 @@ let interTimefn: any = null;
 const startRecording = () => {
   if (!hasStartFlag.value) {
     mediaParas.mediaRecorder = new MediaRecorder(
-      canvasElement.value!.captureStream()
+      // canvasElement.value!.captureStream()
+      mediaParas.mediaStream!,
+      { mimeType: "video/webm;codecs=vp9,opus" }
     );
     mediaParas.mediaRecorder.start();
     // 处理录制的数据块
@@ -619,6 +624,7 @@ onBeforeUnmount(() => {
         class="object-contain"
         ref="videoElement"
         style="display: none; height: 720px"
+        muted
         autoplay
         src="../assets/images/VeryCapture_20230811171452.mp4"
       ></video>
