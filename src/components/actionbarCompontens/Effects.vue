@@ -9,10 +9,10 @@ import { useStore } from "@/store/store";
 const state = useStore();
 const arr = [
   { name: "cat", title: "猫耳", image: catEffects },
-  { name: "dogHead", title: "狗头", image: dogEffects },
+  { name: "dogHead", title: "搞怪面具", image: dogEffects },
   { name: "anger", title: "可爱表情", image: angerEffects },
   { name: "lightning", title: "张嘴放电", image: lightningEffects },
-  { name: "mask", title: "口罩", image: mask },
+  { name: "mask", title: "口红面纱", image: mask },
   { name: "mianju", title: "边框面具", image: mianju },
 ];
 const applyFilter = (filterName) => {

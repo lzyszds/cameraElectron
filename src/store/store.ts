@@ -24,7 +24,9 @@ export const useStore = defineStore('counter', () => {
    * @param {*} ctx
    * @param {*} sizeMulitple
    */
-  const handleEffects = (landmarks, faceContour, ctx, sizeMulitple) => {
+  const handleEffects = (resizedDetections, faceContour, ctx, sizeMulitple) => {
+    const landmarks = resizedDetections[0].landmarks;
+    const expressions = resizedDetections[0].expressions;
     switch (effectsData.value) {
       case 'dogHead':
         //哈士奇狗头特效

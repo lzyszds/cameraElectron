@@ -362,6 +362,31 @@ export function debounceRef<T>(value: T, duration: number = 1000) {
   })
 }
 
+export const getOverlayValues = landmarks => {
+  const nose = landmarks.getNose()
+  const jawline = landmarks.getJawOutline()
+
+  const jawLeft = jawline[0]
+  const jawRight = jawline.splice(-1)[0]
+  const adjacent = jawRight.x - jawLeft.x
+  const opposite = jawRight.y - jawLeft.y
+  const jawLength = Math.sqrt(Math.pow(adjacent, 2) + Math.pow(opposite, 2))
+
+  // Both of these work. The chat believes atan2 is better.
+  // I don't know why. (It doesn’t break if we divide by zero.)
+  // const angle = Math.round(Math.tan(opposite / adjacent) * 100)
+  const angle = Math.atan2(opposite, adjacent) * (180 / Math.PI)
+  const width = jawLength * 2
+
+
+  return {
+    width,
+    angle,
+    leftOffset: jawLeft.x - width * 0.24,
+    topOffset: nose[0].y - width * 0.47,
+  }
+}
+
 
 export default {
   splitArray,
@@ -384,4 +409,5 @@ export default {
   imageLoader,
   setTimeoutAsync,
   debounceRef,
+  getOverlayValues
 };

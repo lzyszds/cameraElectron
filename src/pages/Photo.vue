@@ -6,7 +6,7 @@ import { useEventListener, useStorage, useSessionStorage } from "@vueuse/core";
 
 import { ElNotification, dayjs } from "element-plus";
 import { useStore } from "@/store/store";
-import { formatDuration } from "@/utils/lzyutils";
+import { formatDuration, getOverlayValues } from "@/utils/lzyutils";
 
 import { resizeRatio, siderbar } from "@/utils/photoUtils";
 import PhotoList from "@/components/PhotoList.vue";
@@ -84,10 +84,9 @@ const initCamera = async () => {
           const detections = await detectAllFaces(
             videoElement.value!,
             new TinyFaceDetectorOptions()
-          )
-            .withFaceLandmarks()
-            .withFaceDescriptors()
-            .withFaceExpressions();
+          ).withFaceLandmarks();
+          // .withFaceDescriptors()
+          // .withFaceExpressions();
           // .withAgeAndGender();
           const resizedDetections = resizeResults(detections, {
             width,
@@ -100,11 +99,10 @@ const initCamera = async () => {
           const { width: boxWidth } = resizedDetections[0].detection.box;
           // 计算脸部在屏幕中的宽度和高度的比例
           const faceWidthToHeightRatio = boxWidth / width;
-
           ctx.clearRect(0, 0, width, height);
 
           state.handleEffects(
-            landmarks,
+            resizedDetections,
             faceContour,
             ctx,
             faceWidthToHeightRatio

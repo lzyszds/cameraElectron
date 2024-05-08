@@ -8,7 +8,7 @@
  * getRightEyeBrow(): 返回一个数组，包含了右眉毛关键点的坐标。
  * getChin(): 返回一个数组，包含了下巴的关键点坐标。
  */
-import { imageLoader } from '@/utils/lzyutils'
+import { getOverlayValues, imageLoader } from '@/utils/lzyutils'
 
 export default {
   utils: {
@@ -26,14 +26,18 @@ export default {
   },
 
   dogHead: async function (ctx, getParas, sizeMulitple) {
-    const dogHead = await imageLoader.loadImage("src/assets/images/Effects/dogHead.png");
-    dogHead.src = "src/assets/images/Effects/dogHead.png";
+    const overlayValues = getOverlayValues(getParas);
+    const dogHead = await imageLoader.loadImage("src/assets/images/Effects/overlay-blue-monster.png");
+    dogHead.src = "src/assets/images/Effects/overlay-clown.png";
+    const scale = dogHead.width / dogHead.naturalWidth
+    const height = overlayValues.width * (dogHead.naturalHeight / dogHead.naturalWidth)
+
     ctx.drawImage(
       dogHead,
-      getParas.shift.x + (30 * sizeMulitple) + 20,
-      getParas.shift.y - (250 * sizeMulitple),
-      597 * sizeMulitple,
-      783 * sizeMulitple
+      overlayValues.leftOffset * scale,
+      overlayValues.topOffset * scale,
+      overlayValues.width * scale,
+      height * scale
     );
   },
   anger: async function (ctx, getParas) {
@@ -97,7 +101,6 @@ export default {
     );
   },
   cat: async function (faceContour, ctx, getParas, sizeMultiple) {
-    console.log(`lzy  faceContour:`, faceContour)
     const getLeftEye = getParas.getLeftEye();
     const nose = getParas.getNose();
     const height = nose[Math.floor((nose.length - 1) / 2)].y;
@@ -150,21 +153,49 @@ export default {
     light()
   },
   mask: function (ctx, getParas) {
+    ctx.beginPath();
     // 绘制人脸轮廓
     const faceContourData = getParas.getJawOutline();
     for (let i = 1; i < faceContourData.length - 1; i++) {
       ctx.lineTo(faceContourData[i].x, faceContourData[i].y);
     }
-    ctx.strokeStyle = "rgba(0, 0, 0, 1)"
-
+    // 路径闭合并绘制轮廓
     ctx.closePath();
+    ctx.strokeStyle = "rgba(255, 255, 255, 1)";
     ctx.stroke();
 
     // 填充绘制的区域
-    ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
     ctx.fill();
+
+    //绘制嘴巴区域
     ctx.beginPath();
+    const mouth = getParas.getMouth();
+    ctx.moveTo(mouth[0].x, mouth[0].y);
+    for (let i = 1; i < mouth.length; i++) {
+      ctx.lineTo(mouth[i].x, mouth[i].y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(254,35,105, 0.9)';
+    ctx.fill();
+
+    //绘制鼻子区域
+    ctx.beginPath();
+    const nose = getParas.getNose();
+    ctx.moveTo(nose[0].x, nose[0].y);
+    for (let i = 1; i < nose.length; i++) {
+      ctx.lineTo(nose[i].x, nose[i].y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = "rgba(0, 0, 0, 1)";
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(254,35,105, 0.9)';
+    ctx.fill();
+
+
     // 清除剪切区域，以便绘制其他内容
     ctx.restore();
-  }
+  },
 }
