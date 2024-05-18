@@ -30,6 +30,7 @@ const mediaParas = reactive<MediaparasType>({
   chunks: [],
   time: 0,
   fileSize: 0,
+  isMuted: false,
 });
 // 视频元素引用
 const videoElement: Ref<HTMLVideoElement | null> = ref(null);
@@ -247,11 +248,18 @@ const hasStartFlag = ref<boolean>(false);
 let interTimefn: any = null;
 const startRecording = () => {
   if (!hasStartFlag.value) {
-    mediaParas.mediaRecorder = new MediaRecorder(
-      // canvasElement.value!.captureStream()
-      mediaParas.mediaStream!,
-      { mimeType: "video/webm;codecs=vp9,opus" }
-    );
+    // 首先，从canvas得到视频流
+    const videoStream = canvasElement.value!.captureStream();
+    if (!mediaParas.isMuted) {
+      // 然后把原始媒体流的音频轨道加到视频流中
+      mediaParas.mediaStream?.getAudioTracks().forEach((track) => {
+        videoStream.addTrack(track);
+      });
+    }
+
+    // 现在，videoStream 包含了音频和视频，你可以传递给 MediaRecorder
+    mediaParas.mediaRecorder = new MediaRecorder(videoStream);
+
     mediaParas.mediaRecorder.start();
     // 处理录制的数据块
     mediaParas.mediaRecorder.ondataavailable = (event: BlobEvent) => {
@@ -324,7 +332,6 @@ function sendBlobToMainProcess(isSaveAs) {
       title: "保存失败",
       message: "请先录制视频(或者录制的时间太短)",
       type: "error",
-      duration: 1000,
     });
   }
 }
@@ -336,9 +343,8 @@ function saveSuccess(res) {
   ElNotification({
     title: "保存成功",
     dangerouslyUseHTMLString: true,
-    message: res,
+    message: "视频保存成功",
     type: "success",
-    duration: 1000,
   });
   const data = {
     fileName: videoFileData.fileName,
@@ -353,6 +359,15 @@ function saveSuccess(res) {
     videoFileData[key] = "";
   });
 }
+const disableSound = () => {
+  mediaParas.isMuted = !mediaParas.isMuted;
+  ElNotification({
+    title: "提示",
+    dangerouslyUseHTMLString: true,
+    message: mediaParas.isMuted ? "关闭录制音效" : "开启录制音效",
+    type: "success",
+  });
+};
 
 const activeTool = useSessionStorage("activeTool", "text");
 //切换工具
@@ -382,7 +397,6 @@ const photograph = () => {
       title: "保存成功",
       message: "照片保存成功",
       type: "success",
-      duration: 1000,
     });
     // 准备图片的元数据，并添加到存储列表中
     const data = {
@@ -660,6 +674,13 @@ onBeforeUnmount(() => {
           </button>
           <button class="btn" @click="sendBlobToMainProcess(true)">
             另存为
+          </button>
+          <button
+            class="btn ml-1"
+            @click="disableSound"
+            :style="{ color: mediaParas.isMuted ? 'red' : '' }"
+          >
+            <LzyIcon name="mynaui:volume-slash"></LzyIcon>静音
           </button>
           <div
             class="px-2 text-[var(--reverColor)] bg-[var(--themeColor)] text-center rounded h-8 leading-8 select-none"

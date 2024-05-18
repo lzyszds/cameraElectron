@@ -16,4 +16,6 @@ export interface MediaparasType {
   time: number;
   //文件大小
   fileSize: number;
+  //是否禁用录制声音
+  isMuted: boolean;
 }
